@@ -38,17 +38,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/compulim/browser.git"
+    "url": "https://github.com/teamonting/browser.git"
   },
   "bugs": {
-    "url": "https://github.com/compulim/browser/issues"
+    "url": "https://github.com/teamonting/browser/issues"
   },
-  "homepage": "https://github.com/compulim/browser#readme",
+  "homepage": "https://github.com/teamonting/browser#readme",
   "localPeerDependencies": {
     "@onting/common": "0.0.0-0",
     "@onting/test-harness": "0.0.0-0"
   },
-  "author": "William Wong (https://github.com/compulim)",
+  "author": "William Wong (https://github.com/teamonting)",
   "devDependencies": {
     "@happy-dom/global-registrator": "^20.10.4",
     "@onting/common": "^0.0.0-0",
