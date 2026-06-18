@@ -1,7 +1,7 @@
 import { findUp } from 'find-up';
 
 async function findGeckoDriverBin_({ windows }: { readonly windows?: boolean | undefined }): Promise<string> {
-  let path = windows
+  const path = windows
     ? await findUp('geckodriver.exe')
     : (await findUp('geckodriver')) || (await findUp('/usr/bin/geckodriver'));
 

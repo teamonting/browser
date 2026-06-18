@@ -1,7 +1,7 @@
 import { findUp } from 'find-up';
 
 async function findEdgeDriverBin_({ windows }: { readonly windows?: boolean | undefined }): Promise<string> {
-  let path = windows
+  const path = windows
     ? await findUp('msedgedriver.exe')
     : (await findUp('msedgedriver')) || (await findUp('/usr/bin/msedgedriver'));
 

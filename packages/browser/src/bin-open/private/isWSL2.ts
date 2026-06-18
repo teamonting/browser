@@ -8,7 +8,7 @@ async function isWSL2_(): Promise<boolean> {
     const procVersion = await readFile('/proc/version', 'utf-8');
 
     return /WSL2/iu.test(procVersion);
-  } catch (err) {
+  } catch {
     return false;
   }
 }

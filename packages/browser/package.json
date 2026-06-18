@@ -26,7 +26,8 @@
   },
   "files": [
     "./*.js",
-    "./dist/"
+    "./dist/",
+    "./src/bin-open/"
   ],
   "scripts": {
     "build": "tsup",
@@ -83,6 +84,8 @@
     "@onting/rpc": "^0.1.0-main.202606142148.67b5d79",
     "@onting/selenium-webdriver-message-port": "^0.2.0",
     "@onting/stub": "^0.1.0-main.202606180715.1310683",
+    "commander": "^15.0.0",
+    "find-up": "^8.0.0",
     "message-port-rpc": "^3.0.1",
     "selenium-webdriver": "^4.45.0"
   }

@@ -4,7 +4,8 @@ export default defineConfig([
   {
     dts: true,
     entry: {
-      browser: './src/browser/index.ts'
+      browser: './src/browser/index.ts',
+      index: './src/index.ts'
     },
     format: 'esm',
     noExternal: ['@onting/selenium-webdriver-message-port', 'message-port-rpc'],

@@ -1,7 +1,7 @@
 import { findUp } from 'find-up';
 
 async function findChromeDriverBin_({ windows }: { readonly windows?: boolean | undefined }): Promise<string> {
-  let path = windows
+  const path = windows
     ? await findUp('chromedriver.exe')
     : (await findUp('chromedriver')) || (await findUp('/usr/bin/chromedriver'));
 

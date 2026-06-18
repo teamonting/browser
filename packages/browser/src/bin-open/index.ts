@@ -4,7 +4,7 @@
 
 import { listen } from '@onting/rpc/server.js';
 import { viaBiDi } from '@onting/selenium-webdriver-message-port/host.js';
-import program from 'commander';
+import { program } from 'commander';
 import os from 'node:os';
 import { BrowsingContext, error as SeleniumWebDriverError } from 'selenium-webdriver';
 import getScriptManagerInstance from 'selenium-webdriver/bidi/scriptManager.js';
@@ -28,15 +28,17 @@ program.option('--wsl', 'run browser on Windows (if under WSL2)');
 
 program.parse(process.argv);
 
-const opts = program.opts() satisfies {} as {
-  chrome: boolean | undefined;
-  edge: boolean | undefined;
-  firefox: boolean | undefined;
-  pipe: boolean | undefined;
-  safari: boolean | undefined;
-  stub: string;
-  wsl: boolean | undefined;
-};
+const opts =
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  program.opts() satisfies {} as {
+    chrome: boolean | undefined;
+    edge: boolean | undefined;
+    firefox: boolean | undefined;
+    pipe: boolean | undefined;
+    safari: boolean | undefined;
+    stub: string;
+    wsl: boolean | undefined;
+  };
 
 let useWindowsBinary = !!opts.wsl;
 
@@ -97,6 +99,7 @@ async function attachRealm(realmInfo: RealmInfo): Promise<void> {
 
   const scriptManagerPromise = getScriptManagerInstance(
     realmInfo.browsingContext,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     webDriver as any
   ) as unknown as Promise<ScriptManager>;
 
@@ -186,7 +189,14 @@ async function reconcileRealms(): Promise<void> {
 }
 
 const activeRealms: Map<string, ActiveRealmContext> = new Map();
-const scriptManager = (await getScriptManagerInstance(null as any, webDriver as any)) as unknown as ScriptManager;
+
+// @types/selenium-webdriver@4.35.0 does not match selenium-webdriver@4.44.0
+const scriptManager = (await getScriptManagerInstance(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  null as any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  webDriver as any
+)) as unknown as ScriptManager;
 
 const sequenceReconcileRealmsCall = createSequencer();
 
