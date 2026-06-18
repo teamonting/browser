@@ -12,12 +12,12 @@
     "node": ">=24.12.0"
   },
   "type": "module",
-  "main": "./dist/browser.js",
-  "typings": "./dist/browser.d.ts",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
   "exports": {
     "./browser.js": {
-      "types": "./dist/browser.d.ts",
-      "default": "./dist/browser.js"
+      "types": "./static/browser.d.ts",
+      "default": "./static/browser.js"
     },
     ".": {
       "types": "./dist/index.d.ts",
