@@ -5,12 +5,23 @@
   "publishConfig": {
     "access": "public"
   },
+  "bin": {
+    "open": "./src/bin-open/index.ts"
+  },
+  "engines": {
+    "node": ">=24.12.0"
+  },
+  "type": "module",
   "main": "./dist/browser.js",
   "typings": "./dist/browser.d.ts",
   "exports": {
-    ".": {
+    "./browser.js": {
       "types": "./dist/browser.d.ts",
       "default": "./dist/browser.js"
+    },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   },
   "files": [
@@ -57,6 +68,7 @@
     "@tsconfig/recommended": "^1.0.13",
     "@tsconfig/strictest": "^2.0.8",
     "@types/node": "^25.9.3",
+    "@types/selenium-webdriver": "^4.35.6",
     "esbuild": "^0.28.1",
     "escape-string-regexp": "^5.0.0",
     "expect": "^30.4.1",
@@ -66,5 +78,12 @@
     "typescript": "^6.0.3"
   },
   "license": "MIT",
-  "pinDependencies": {}
+  "pinDependencies": {},
+  "dependencies": {
+    "@onting/rpc": "^0.1.0-main.202606142148.67b5d79",
+    "@onting/selenium-webdriver-message-port": "^0.2.0",
+    "@onting/stub": "^0.1.0-main.202606180715.1310683",
+    "message-port-rpc": "^3.0.1",
+    "selenium-webdriver": "^4.45.0"
+  }
 }
