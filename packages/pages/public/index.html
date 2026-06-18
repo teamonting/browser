@@ -16,6 +16,9 @@
 
       const stub = getStub();
 
+      // Set viewport
+      await stub.setViewport(640, 480);
+
       // Print timestamp
       const timestamp = await stub.getTimestamp();
 
@@ -27,8 +30,6 @@
 
       // Capture screenshot
       console.log(await stub.captureScreenshot());
-
-      await stub.setViewport(640, 480);
     </script>
   </body>
 </html>
