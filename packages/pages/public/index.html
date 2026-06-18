@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script type="importmap">
+      {
+        "imports": {
+          "@onting/browser/browser.js": "https://cdn.jsdelivr.net/npm/@onting/browser/dist/browser.js",
+          "@onting/stub": "https://cdn.jsdelivr.net/npm/@onting/stub/dist/index.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <script type="module">
+      import { getStub } from '@onting/browser/browser.js';
+      import stubDeclaration from '@onting/stub';
+
+      const stub = getStub(stubDeclaration);
+
+      // Print timestamp
+      const timestamp = await stub.getTimestamp();
+
+      const headingElement = document.createElement('h1');
+
+      headingElement.textContent = timestamp;
+
+      document.body.appendChild(headingElement);
+
+      // Capture screenshot
+      console.log(await stub.captureScreenshot());
+    </script>
+  </body>
+</html>

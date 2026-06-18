@@ -6,7 +6,7 @@
     "access": "public"
   },
   "bin": {
-    "open": "./src/bin-open/index.ts"
+    "open": "./dist/bin-open.js"
   },
   "engines": {
     "node": ">=24.12.0"
@@ -26,8 +26,7 @@
   },
   "files": [
     "./*.js",
-    "./dist/",
-    "./src/bin-open/"
+    "./dist/"
   ],
   "scripts": {
     "build": "tsup",
