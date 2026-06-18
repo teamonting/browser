@@ -80,7 +80,7 @@
   "license": "MIT",
   "pinDependencies": {},
   "dependencies": {
-    "@onting/rpc": "^0.1.0-main.202606142148.67b5d79",
+    "@onting/rpc": "^0.1.0-main.202606180814.97fa5b6",
     "@onting/selenium-webdriver-message-port": "^0.2.0",
     "@onting/stub": "^0.1.0-main.202606180715.1310683",
     "commander": "^15.0.0",
