@@ -15,7 +15,7 @@ export default defineConfig([
       index: './src/index.ts'
     },
     format: 'esm',
-    noExternal: ['@onting/selenium-webdriver-message-port', 'message-port-rpc'],
+    noExternal: ['@onting/rpc', '@onting/selenium-webdriver-message-port', '@onting/stub', 'message-port-rpc'],
     sourcemap: true,
     target: ['chrome148']
   }

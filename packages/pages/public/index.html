@@ -4,8 +4,8 @@
     <script type="importmap">
       {
         "imports": {
-          "@onting/browser/browser.js": "https://cdn.jsdelivr.net/npm/@onting/browser/dist/browser.js",
-          "@onting/stub": "https://cdn.jsdelivr.net/npm/@onting/stub/dist/index.js"
+          "@onting/browser/browser.js": "https://cdn.jsdelivr.net/npm/@onting/browser@main/dist/browser.js",
+          "@onting/stub": "https://cdn.jsdelivr.net/npm/@onting/stub@main/dist/stub.js"
         }
       }
     </script>
@@ -16,6 +16,8 @@
       import stubDeclaration from '@onting/stub';
 
       const stub = getStub(stubDeclaration);
+
+      console.log(stub);
 
       // Print timestamp
       const timestamp = await stub.getTimestamp();
