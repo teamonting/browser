@@ -6,9 +6,12 @@ import { Options as SafariOptions, ServiceBuilder as SafariServiceBuilder } from
 import findChromeDriverBin from './findChromeDriverBin.ts';
 import findEdgeDriverBin from './findEdgeDriverBin.ts';
 import findGeckoDriverBin from './findGeckoDriverBin.ts';
-import findHostIP from './findHostIP.ts';
-import findLocalIP from './findLocalIP.ts';
+import findWSL2HostIP from './findWSL2HostIP.ts';
+import findWSL2LocalIP from './findWSL2LocalIP.ts';
 import findSafariDriverBin from './findSafariDriverBin.ts';
+import { platform } from 'node:os';
+
+const isWindows = platform() === 'win32';
 
 export default async function buildWebDriver(
   browser: 'chrome' | 'edge' | 'firefox' | 'safari',
@@ -20,8 +23,8 @@ export default async function buildWebDriver(
     readonly useWindowsBinary: boolean;
   }
 ) {
-  const hostIP = useWindowsBinary ? await findHostIP() : '127.0.0.1';
-  const localIP = useWindowsBinary ? await findLocalIP() : '127.0.0.1';
+  const hostIP = useWindowsBinary && !isWindows ? await findWSL2HostIP() : '127.0.0.1';
+  const localIP = useWindowsBinary && !isWindows ? await findWSL2LocalIP() : '127.0.0.1';
 
   switch (browser) {
     case 'edge': {
