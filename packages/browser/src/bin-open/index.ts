@@ -5,7 +5,7 @@
 import { listen } from '@onting/rpc/server.js';
 import { viaBiDi } from '@onting/selenium-webdriver-message-port/host.js';
 import { program } from 'commander';
-import os from 'node:os';
+import { platform } from 'node:os';
 import { BrowsingContext, error as SeleniumWebDriverError } from 'selenium-webdriver';
 import getScriptManagerInstance from 'selenium-webdriver/bidi/scriptManager.js';
 import buildWebDriver from './private/buildWebDriver.ts';
@@ -46,10 +46,11 @@ if (opts.wsl && !(await isWSL2())) {
   console.warn('Not running under WSL2, ignoring --wsl.');
 
   useWindowsBinary = false;
-} else if (os.platform() === 'win32') {
+} else if (platform() === 'win32') {
   useWindowsBinary = true;
 }
 
+// TODO: If `--chrome` is not set, we will default to "chrome" but we should warn user that default behavior could change anytime.
 const webDriver = await buildWebDriver(
   opts.edge ? 'edge' : opts.firefox ? 'firefox' : opts.safari ? 'safari' : 'chrome',
   { pipeStdio: !!opts.pipe, useWindowsBinary }
