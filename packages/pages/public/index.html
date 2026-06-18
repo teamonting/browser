@@ -13,9 +13,8 @@
   <body>
     <script type="module">
       import { getStub } from '@onting/browser/browser.js';
-      import stubDeclaration from '@onting/stub';
 
-      const stub = getStub(stubDeclaration);
+      const stub = getStub();
 
       // Print timestamp
       const timestamp = await stub.getTimestamp();
@@ -28,6 +27,10 @@
 
       // Capture screenshot
       console.log(await stub.captureScreenshot());
+
+      console.log({ stub });
+
+      await stub.setViewport(640, 480);
     </script>
   </body>
 </html>
