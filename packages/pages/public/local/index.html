@@ -12,7 +12,11 @@
   </head>
   <body>
     <button data-testid="click-me" type="button">Click me</button>
-    <iframe src="iframe.html"></iframe>
+    <label>
+      Type on me:&nbsp;
+      <input type="text" data-testid="type-on-me" />
+    </label>
+    <iframe src="/local/iframe.html" style="width: 560px"></iframe>
     <script type="module">
       document.querySelector('[data-testid="click-me"]').addEventListener('click', ({ currentTarget }) => {
         currentTarget.textContent = 'Clicked';
@@ -47,7 +51,9 @@
 
       await stub.test(document.body);
 
-      console.log(await stub.click(document.querySelector('[data-testid="click-me"]')));
+      await stub.click(document.querySelector('[data-testid="click-me"]'));
+
+      await stub.type('Hello, World!', { clickBeforeType: document.querySelector('[data-testid="type-on-me"]') });
     </script>
   </body>
 </html>

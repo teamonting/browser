@@ -12,6 +12,10 @@
   </head>
   <body>
     <button data-testid="click-me" type="button">Inside click me</button>
+    <label>
+      Inside type on me:&nbsp;
+      <input type="text" data-testid="type-on-me" />
+    </label>
     <script type="module">
       document.querySelector('[data-testid="click-me"]').addEventListener('click', ({ currentTarget }) => {
         currentTarget.textContent = 'Inside clicked';
@@ -36,7 +40,9 @@
 
       await stub.test(document.body);
 
-      console.log(await stub.click(document.querySelector('[data-testid="click-me"]')));
+      await stub.click(document.querySelector('[data-testid="click-me"]'));
+
+      await stub.type('Hello, World!', { clickBeforeType: document.querySelector('[data-testid="type-on-me"]') });
     </script>
   </body>
 </html>
