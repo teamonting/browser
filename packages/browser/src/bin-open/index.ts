@@ -226,7 +226,10 @@ const reconcileRealmsInSequence: typeof reconcileRealms = (...args) => {
   return sequenceReconcileRealmsCall(async () => {
     try {
       return await reconcileRealms(...args);
-    } catch {}
+    } catch (error) {
+      // Keep host running despite realm issues.
+      console.error(error);
+    }
   });
 };
 
