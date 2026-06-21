@@ -120,11 +120,7 @@ async function attachRealm(realmInfo: RealmInfo): Promise<void> {
 
   const teardown = listen(
     // Security risk: intentionally load code from user-supplied path.
-    // (await import(opts.stub)).default,
     {
-      // TODO: Fix the design of this import.
-      //       Browser must NOT import "implement" because "implement" could contains Node.js packages that is not in import map.
-      //       Host must import both "keys" and "implement".
       ...(await import(`${opts.stub}`)).default,
       ...(await import(`${opts.stub}/implementation`)).default
     },
@@ -170,8 +166,9 @@ async function attachRealm(realmInfo: RealmInfo): Promise<void> {
   try {
     await attachElementTranslator(webDriver, realmInfo);
   } catch {
+    // TODO: We blanket all errors about attaching the translator which may not be a good idea.
     // In Firefox, the realm could be detached so fast we did not finish attach translator.
-    console.warn(`[${shortenRealmId(realmId)}] Realm detached immediately after attached`);
+    console.warn(`[${shortenRealmId(realmInfo.realmId)}] Realm detached immediately after attached`);
 
     abortController.abort();
 

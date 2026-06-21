@@ -76,8 +76,8 @@
   "license": "MIT",
   "pinDependencies": {},
   "dependencies": {
-    "@onting/rpc": "^0.1.0-main.202606201037.d57706b",
-    "@onting/selenium-webdriver-message-port": "^0.2.1-main.202606210715.b3afcf2",
+    "@onting/rpc": "^0.1.1-main.202606211054.9761a01",
+    "@onting/selenium-webdriver-message-port": "^0.2.1-main.202606211314.66932d0",
     "commander": "^15.0.0",
     "find-up": "^8.0.0",
     "message-port-rpc": "^3.0.1",
@@ -87,6 +87,6 @@
     "workthru": "^0.1.1-main.202606201134.ea6dd9f"
   },
   "peerDependencies": {
-    "@onting/stub": "^0.1.0-main"
+    "@onting/stub": "^0.1.0-main.202606211106.b906510"
   }
 }

@@ -1,12 +1,12 @@
-import type { StubDeclaration, StubImplementation } from '@onting/rpc';
+import type { Stub, StubDeclaration } from '@onting/rpc';
 import { createClientStub } from '@onting/rpc/client.js';
 import { messagePort } from '@onting/selenium-webdriver-message-port/browser.js';
 import defaultStubDeclaration from '@onting/stub';
 import { workthru } from 'workthru/async';
-import { isMarshalledElement } from '../common/marshalledElement.ts';
 import { marshalDOMElement, unmarshalToDOMElement } from '../common/marshalledElement.browser.ts';
+import { isMarshalledElement } from '../common/marshalledElement.ts';
 
-function getStub(stubDeclaration?: StubDeclaration<StubImplementation> | undefined) {
+function getStub(stubDeclaration?: StubDeclaration<Stub> | undefined) {
   return createClientStub(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (stubDeclaration ?? defaultStubDeclaration) as any,

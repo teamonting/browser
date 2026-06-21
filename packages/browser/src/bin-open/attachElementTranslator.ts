@@ -116,11 +116,6 @@ export default async function attachElementTranslator(webDriver: WebDriver, real
             type: 'string',
             value: nodeRemoteValue.sharedId
           });
-
-          console.log('browser send DOM to host', {
-            realmId,
-            nodeRemoteValue
-          });
         } else if (sharedIdLocalValue.type !== 'undefined') {
           // With shared ID, fake a RemoteValue to send to the browser, arriving in browser as DOM element.
           // So we can translate ID -> DOM element.
