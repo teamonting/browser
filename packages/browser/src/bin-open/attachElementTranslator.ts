@@ -81,21 +81,6 @@ export default async function attachElementTranslator(webDriver: WebDriver, real
 
   const scriptManager = await getScriptManagerInstance(realmInfo.browsingContext, webDriver);
 
-  await scriptManager.callFunctionInRealm(
-    realmInfo.realmId,
-    '' +
-      ((hostPollSymbol: string, fn: (...args: readonly unknown[]) => void) => {
-        (globalThis as GlobalThisWithTranslator)[
-          Symbol.for(hostPollSymbol) as typeof TRANSLATOR_SEND_MESSAGE_TO_HOST_SYMBOL
-        ] = fn;
-      }),
-    true,
-    [
-      LocalValue.createStringValue(TRANSLATOR_SEND_MESSAGE_TO_HOST_SYMBOL.description!),
-      LocalValue.createChannelValue(new ChannelValue(channelName))
-    ]
-  );
-
   await scriptManager.onMessage(event => {
     // For unknown reasons, scriptManager.onMessage could be called with RealmInfo, WindowRealmInfo, etc.
     if (!('channel' in event) || event.channel !== channelName) {
@@ -131,6 +116,11 @@ export default async function attachElementTranslator(webDriver: WebDriver, real
             type: 'string',
             value: nodeRemoteValue.sharedId
           });
+
+          console.log('browser send DOM to host', {
+            realmId,
+            nodeRemoteValue
+          });
         } else if (sharedIdLocalValue.type !== 'undefined') {
           // With shared ID, fake a RemoteValue to send to the browser, arriving in browser as DOM element.
           // So we can translate ID -> DOM element.
@@ -155,6 +145,8 @@ export default async function attachElementTranslator(webDriver: WebDriver, real
           realmId,
           '' +
             ((returnSymbol: string, key: string, element: Element, sharedId: string): void => {
+              console.log('host return', document.location.href, key, element, sharedId);
+
               (globalThis as GlobalThisWithTranslator)[
                 Symbol.for(returnSymbol) as typeof TRANSLATOR_HOST_RETURN_SYMBOL
               ](key, element, { sharedId });
@@ -170,6 +162,23 @@ export default async function attachElementTranslator(webDriver: WebDriver, real
       }
     })();
   });
+
+  // `onMessage()` should run before attaching.
+
+  await scriptManager.callFunctionInRealm(
+    realmInfo.realmId,
+    '' +
+      ((hostPollSymbol: string, fn: (...args: readonly unknown[]) => void) => {
+        (globalThis as GlobalThisWithTranslator)[
+          Symbol.for(hostPollSymbol) as typeof TRANSLATOR_SEND_MESSAGE_TO_HOST_SYMBOL
+        ] = fn;
+      }),
+    true,
+    [
+      LocalValue.createStringValue(TRANSLATOR_SEND_MESSAGE_TO_HOST_SYMBOL.description!),
+      LocalValue.createChannelValue(new ChannelValue(channelName))
+    ]
+  );
 
   await scriptManager.callFunctionInRealm(
     realmInfo.realmId,
