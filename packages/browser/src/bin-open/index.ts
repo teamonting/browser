@@ -118,8 +118,6 @@ async function attachRealm(realmInfo: RealmInfo): Promise<void> {
 
   activeRealms.set(realmId, entry);
 
-  void attachElementTranslator(webDriver, realmInfo);
-
   const teardown = listen(
     // Security risk: intentionally load code from user-supplied path.
     // (await import(opts.stub)).default,
@@ -168,6 +166,17 @@ async function attachRealm(realmInfo: RealmInfo): Promise<void> {
       teardown();
     } catch {}
   });
+
+  try {
+    await attachElementTranslator(webDriver, realmInfo);
+  } catch {
+    // In Firefox, the realm could be detached so fast we did not finish attach translator.
+    console.warn(`[${shortenRealmId(realmId)}] Realm detached immediately after attached`);
+
+    abortController.abort();
+
+    return;
+  }
 }
 
 async function detachRealm(realmInfo: RealmInfo): Promise<void> {
