@@ -7,19 +7,16 @@
           "x@onting/browser": "https://cdn.jsdelivr.net/npm/@onting/browser@main/static/index.js",
           "@onting/browser": "http://localhost:5002/index.js",
           "x@onting/stub": "https://cdn.jsdelivr.net/npm/@onting/stub@main/dist/index.js",
-          "@onting/stub": "http://localhost:5001/index.js",
-          "selenium-webdriver": "http://localhost:5001/index.js",
-          "selenium-webdriver/bidi/browsingContext.js": "http://localhost:5001/index.js"
+          "@onting/stub": "http://localhost:5001/index.js"
         }
       }
     </script>
   </head>
   <body>
-    <button data-testid="click-me" type="button">Click me</button>
-    <iframe src="iframe.html"></iframe>
+    <button data-testid="click-me" type="button">Inside click me</button>
     <script type="module">
       document.querySelector('[data-testid="click-me"]').addEventListener('click', ({ currentTarget }) => {
-        currentTarget.textContent = 'Clicked';
+        currentTarget.textContent = 'Inside clicked';
         currentTarget.style.backgroundColor = 'red';
         currentTarget.style.borderColor = 'white';
         currentTarget.style.color = 'white';
@@ -30,13 +27,6 @@
 
       const stub = getStub();
 
-      console.log('got stub', stub);
-
-      // Set viewport
-      await stub.setViewport(640, 480);
-
-      console.log('set viewport');
-
       // Print timestamp
       const timestamp = await stub.getTimestamp();
 
@@ -46,18 +36,7 @@
 
       document.body.appendChild(headingElement);
 
-      // Capture screenshot
-      // console.log(await stub.captureScreenshot());
-
-      console.log(await stub.test(document.body));
       console.log(await stub.click(document.querySelector('[data-testid="click-me"]')));
-
-      // const result = await globalThis[Symbol.for('@onting/browser/element-translator/translate')](document.body);
-
-      // console.log({
-      //   element: result.element,
-      //   remoteObject: JSON.parse(result.remoteObjectJSON)
-      // });
     </script>
   </body>
 </html>

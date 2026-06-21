@@ -6,8 +6,14 @@ import { listen } from '@onting/rpc/server.js';
 import { viaBiDi } from '@onting/selenium-webdriver-message-port/host.js';
 import { program } from 'commander';
 import { platform } from 'node:os';
-import { BrowsingContext, error as SeleniumWebDriverError } from 'selenium-webdriver';
-import getScriptManagerInstance from 'selenium-webdriver/bidi/scriptManager.js';
+import { BrowsingContext, error as SeleniumWebDriverError, WebElement } from 'selenium-webdriver';
+import getScriptManagerInstance, { type RealmInfo, type ScriptManager } from 'selenium-webdriver/bidi/scriptManager.js';
+import { workthru } from 'workthru/async';
+import { MARSHALLED_ELEMENT_SIGNATURE } from '../common/constant.ts';
+import { unmarshalToWebElement } from '../common/marshalledElement.host.ts';
+import { isMarshalledElement } from '../common/marshalledElement.ts';
+import attachElementTranslator from './attachElementTranslator.ts';
+import isWebElementLike from './isWebElementLike.ts';
 import buildWebDriver from './private/buildWebDriver.ts';
 import createSequencer from './private/createSequencer.ts';
 import delta from './private/delta.ts';
@@ -61,20 +67,6 @@ const { socket } = await webDriver.getBidi();
 
 'setMaxListeners' in socket && typeof socket.setMaxListeners === 'function' && socket.setMaxListeners(100);
 
-type RealmInfo = {
-  readonly browsingContext: string;
-  readonly origin: string;
-  readonly realmId: string;
-  readonly realmType: string;
-};
-
-type ScriptManager = {
-  close(): Promise<void>;
-  getAllRealms(): Promise<readonly RealmInfo[]>;
-  onRealmCreated(callback: () => void): Promise<string>;
-  onRealmDestroyed(callback: () => void): Promise<string>;
-};
-
 type ActiveRealmContextReadWrite = {
   messagePortPromise: Promise<MessagePort>;
   realmInfo: RealmInfo;
@@ -126,14 +118,37 @@ async function attachRealm(realmInfo: RealmInfo): Promise<void> {
 
   activeRealms.set(realmId, entry);
 
+  void attachElementTranslator(webDriver, realmInfo);
+
   const teardown = listen(
     // Security risk: intentionally load code from user-supplied path.
-    (await import(opts.stub)).default,
+    // (await import(opts.stub)).default,
+    {
+      // TODO: Fix the design of this import.
+      //       Browser must NOT import "implement" because "implement" could contains Node.js packages that is not in import map.
+      //       Host must import both "keys" and "implement".
+      ...(await import(`${opts.stub}`)).default,
+      ...(await import(`${opts.stub}/implementation`)).default
+    },
     {
       browsingContext: await BrowsingContext(webDriver, { browsingContextId: realmInfo.browsingContext }),
       webDriver
     },
-    await entry.messagePortPromise
+    await entry.messagePortPromise,
+    {
+      async marshal(value: unknown) {
+        return await workthru(value, async value =>
+          isWebElementLike(value)
+            ? [MARSHALLED_ELEMENT_SIGNATURE, { sharedId: await (value as unknown as WebElement).getId() }]
+            : value
+        );
+      },
+      async unmarshal(value: unknown) {
+        return await workthru(value, async value =>
+          isMarshalledElement(value) ? await unmarshalToWebElement(value, webDriver) : value
+        );
+      }
+    }
   );
 
   abortController.signal.addEventListener('abort', () => {
