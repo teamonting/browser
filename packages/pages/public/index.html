@@ -45,7 +45,8 @@
       // Capture screenshot
       // console.log(await stub.captureScreenshot());
 
-      console.log(await stub.test(document.body));
+      await stub.test(document.body);
+
       console.log(await stub.click(document.querySelector('[data-testid="click-me"]')));
     </script>
   </body>

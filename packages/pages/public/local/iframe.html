@@ -34,6 +34,8 @@
 
       document.body.appendChild(headingElement);
 
+      await stub.test(document.body);
+
       console.log(await stub.click(document.querySelector('[data-testid="click-me"]')));
     </script>
   </body>
