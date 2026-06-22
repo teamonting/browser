@@ -140,8 +140,6 @@ export default async function attachElementTranslator(webDriver: WebDriver, real
           realmId,
           '' +
             ((returnSymbol: string, key: string, element: Element, sharedId: string): void => {
-              console.log('host return', document.location.href, key, element, sharedId);
-
               (globalThis as GlobalThisWithTranslator)[
                 Symbol.for(returnSymbol) as typeof TRANSLATOR_HOST_RETURN_SYMBOL
               ](key, element, { sharedId });
