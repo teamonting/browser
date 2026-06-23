@@ -50,11 +50,30 @@ declare module 'selenium-webdriver' {
     options: { browsingContextId?: string; createParameters?: unknown; type?: string }
   ): Promise<BrowsingContextInstance>;
 
+  interface BidiSocket {
+    close(): unknown;
+    on(event: string, listener: (...args: unknown[]) => void): unknown;
+    setMaxListeners?(n: number): unknown;
+  }
+
+  interface BidiConnection {
+    close(): Promise<unknown>;
+    readonly isConnected: boolean;
+    send(params: { method: string; params?: Record<string, unknown> }): Promise<unknown>;
+    readonly socket: BidiSocket;
+    readonly status: Promise<unknown>;
+    subscribe(events: string | string[], browsingContexts?: string | string[]): Promise<void>;
+    unsubscribe(events: string | string[], browsingContexts?: string | string[]): Promise<void>;
+    waitForConnection(): Promise<void>;
+  }
+
   class WebDriver {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     executeScript<T = any>(script: string | ((...args: any[]) => T), ...args: any[]): Promise<T>;
     findElement(locator: unknown): WebElementPromise;
     findElements(locator: unknown): Promise<readonly WebElement[]>;
+    getBidi(): Promise<BidiConnection>;
+    getAllWindowHandles(): Promise<string[]>;
     getWindowHandle(): Promise<string>;
     manage(): { logs(): { get(type: string): Promise<readonly logging.Entry[]> } };
     navigate(): { to(url: string): Promise<void> };

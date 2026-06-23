@@ -9,7 +9,7 @@ import {
   TRANSLATOR_NOTIFY_HOST_SYMBOL,
   TRANSLATOR_SEND_MESSAGE_TO_HOST_SYMBOL,
   type GlobalThisWithTranslator
-} from '../common/constant.ts';
+} from '../../common/constant.ts';
 
 // Monkey-patching selenium-webdriver, they could almost support sending RemoteValue over callFunctionInRealm() in arguments.
 type WithAsMap<T extends Record<string, unknown>> = T & { asMap: () => T };
@@ -83,7 +83,7 @@ export default async function attachElementTranslator(webDriver: WebDriver, real
 
   await scriptManager.onMessage(event => {
     // For unknown reasons, scriptManager.onMessage could be called with RealmInfo, WindowRealmInfo, etc.
-    if (!('channel' in event) || event.channel !== channelName) {
+    if (!event || !('channel' in event) || event.channel !== channelName) {
       return;
     }
 

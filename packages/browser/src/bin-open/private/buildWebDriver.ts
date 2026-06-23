@@ -1,7 +1,11 @@
 import { Browser, Builder } from 'selenium-webdriver';
+// @ts-expect-error
 import { Options as ChromeOptions, ServiceBuilder as ChromeServiceBuilder } from 'selenium-webdriver/chrome.js';
+// @ts-expect-error
 import { Options as EdgeOptions, ServiceBuilder as EdgeServiceBuilder } from 'selenium-webdriver/edge.js';
+// @ts-expect-error
 import { Options as FirefoxOptions, ServiceBuilder as FirefoxServiceBuilder } from 'selenium-webdriver/firefox.js';
+// @ts-expect-error
 import { Options as SafariOptions, ServiceBuilder as SafariServiceBuilder } from 'selenium-webdriver/safari.js';
 import findChromeDriverBin from './findChromeDriverBin.ts';
 import findEdgeDriverBin from './findEdgeDriverBin.ts';
