@@ -82,6 +82,7 @@ declare module 'selenium-webdriver/bidi/scriptManager.js' {
     onMessage(callback: (message: Message | RealmInfo) => void): Promise<number>;
     onRealmCreated(callback: (realm: RealmInfo | WindowRealmInfo) => void): Promise<number>;
     onRealmDestroyed(callback: (realm: RealmInfo | WindowRealmInfo) => void): Promise<number>;
+    removeCallback(id: number): void;
     removePreloadScript(script: string): Promise<unknown>;
   }
 

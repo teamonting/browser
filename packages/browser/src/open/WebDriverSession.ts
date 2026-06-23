@@ -3,32 +3,12 @@
 /// <reference types="node" />
 
 import type { Stub, StubImplementation } from '@onting/rpc';
-import { listen } from '@onting/rpc/server.js';
-import { viaBiDi } from '@onting/selenium-webdriver-message-port/host.js';
 import { program } from 'commander';
-import { BrowsingContext, error as SeleniumWebDriverError, WebElement, type WebDriver } from 'selenium-webdriver';
-import getLogInspectorInstance, { type LogInspector } from 'selenium-webdriver/bidi/logInspector.js';
-import getScriptManagerInstance, { type RealmInfo, type ScriptManager } from 'selenium-webdriver/bidi/scriptManager.js';
-import { workthru } from 'workthru/async';
-import { MARSHALLED_ELEMENT_SIGNATURE } from '../common/constant.ts';
-import { unmarshalToWebElement } from '../common/marshalledElement.host.ts';
-import { isMarshalledElement } from '../common/marshalledElement.ts';
-import attachElementTranslator from './private/attachElementTranslator.ts';
+import { error as SeleniumWebDriverError, type WebDriver } from 'selenium-webdriver';
+import getScriptManagerInstance, { type RealmInfo } from 'selenium-webdriver/bidi/scriptManager.js';
 import createSequencer from './private/createSequencer.ts';
 import delta from './private/delta.ts';
-import isWebElementLike from './private/isWebElementLike.ts';
-import shortenRealmId from './private/shortenRealmId.ts';
-
-type ActiveRealmContextReadWrite = {
-  logInspectorPromise: Promise<LogInspector>;
-  messagePortPromise: Promise<MessagePort>;
-  realmInfo: RealmInfo;
-  scriptManagerPromise: Promise<ScriptManager>;
-
-  abort(): void;
-};
-
-type ActiveRealmContext = Readonly<ActiveRealmContextReadWrite>;
+import RealmSession from './RealmSession.ts';
 
 class WebDriverSession<T extends Stub> extends EventTarget {
   constructor(webDriver: WebDriver, stubImplementation: StubImplementation<T>) {
@@ -68,7 +48,7 @@ class WebDriverSession<T extends Stub> extends EventTarget {
           const [added, _, deleted] = delta<string>(new Set(realmMap.keys()), new Set(this.#activeRealms.keys()));
 
           for (const realmId of deleted.values()) {
-            await this.#detachRealm(this.#activeRealms.get(realmId)!.realmInfo);
+            await this.#detachRealm(realmId);
           }
 
           for (const realmId of added.values()) {
@@ -123,161 +103,41 @@ class WebDriverSession<T extends Stub> extends EventTarget {
     } catch {}
 
     for (const realmContext of this.#activeRealms.values()) {
-      realmContext.abort();
+      realmContext.close();
     }
 
     this.dispatchEvent(new CustomEvent('close'));
   }
 
-  close() {
-    this.#abortController.abort();
-  }
-
   #abortController: AbortController = new AbortController();
-  #activeRealms: Map<string, ActiveRealmContext> = new Map();
+  #activeRealms: Map<string, RealmSession<T>> = new Map();
   #stubImplementation: StubImplementation<T>;
   #webDriver: WebDriver;
 
   async #attachRealm(realmInfo: RealmInfo): Promise<void> {
-    const webDriver = this.#webDriver;
     const { realmId } = realmInfo;
 
     if (this.#activeRealms.has(realmId)) {
       throw new Error(`Realm "${realmId}" has already attached`);
     }
 
-    console.log(
-      `[${shortenRealmId(realmId)}] Attach "${realmInfo.realmType}" realm of browsing context "${realmInfo.browsingContext}" at ${realmInfo.origin}`
-    );
-
-    const abortController = new AbortController();
-
-    const scriptManagerPromise = getScriptManagerInstance(
-      realmInfo.browsingContext,
-      webDriver
-    ) as unknown as Promise<ScriptManager>;
-
-    const messagePortPromise = scriptManagerPromise
-      .then(scriptManager => {
-        if (abortController.signal.aborted) {
-          throw new Error('Aborted');
-        }
-
-        return viaBiDi(scriptManager, { realmId });
-      })
-      .then(({ messagePort }) => messagePort);
-
-    const logInspectorPromise = getLogInspectorInstance(webDriver, [realmInfo.browsingContext]).then(logInspector => {
-      logInspector.onConsoleEntry(event => {
-        console.log(
-          `[${shortenRealmId(realmInfo.realmId)}]`,
-          ...event.args
-            .map(localValue => {
-              if (localValue && typeof localValue === 'object' && 'type' in localValue) {
-                // TODO: We should use `workthru` to deserialize.
-                if (localValue.type === 'string' && 'value' in localValue) {
-                  return localValue.value;
-                }
-              }
-
-              return;
-            })
-            .filter(Boolean)
-        );
-      });
-
-      return logInspector;
-    });
-
-    const entry: ActiveRealmContextReadWrite = {
-      abort: abortController.abort.bind(abortController),
-      logInspectorPromise,
-      messagePortPromise,
-      realmInfo,
-      // TODO: It seems `selenium-webdriver@4.44.0` is bugged.
-      //       If we use a shared `ScriptManager`, we will receive channel messages more than once.
-      //       It seems if `onMessage()` is called twice, `selenium-webdriver` will call every `onMessage()` twice as well (4 times in total).
-      scriptManagerPromise
-    };
-
-    this.#activeRealms.set(realmId, entry);
-
-    const teardown = listen<StubImplementation<T>, T>(
-      this.#stubImplementation,
-      {
-        browsingContext: await BrowsingContext(webDriver, { browsingContextId: realmInfo.browsingContext }),
-        webDriver
-      },
-      await entry.messagePortPromise,
-      {
-        async marshal(value: unknown) {
-          return await workthru(value, async value =>
-            isWebElementLike(value)
-              ? [MARSHALLED_ELEMENT_SIGNATURE, { sharedId: await (value as unknown as WebElement).getId() }]
-              : value
-          );
-        },
-        async unmarshal(value: unknown) {
-          return await workthru(value, async value =>
-            isMarshalledElement(value) ? await unmarshalToWebElement(value, webDriver) : value
-          );
-        }
-      }
-    );
-
-    abortController.signal.addEventListener('abort', () => {
-      (async () => {
-        try {
-          (await entry.logInspectorPromise).close();
-        } catch {}
-      })();
-
-      (async () => {
-        try {
-          (await entry.messagePortPromise).close();
-        } catch {}
-      })();
-
-      (async () => {
-        try {
-          (await entry.scriptManagerPromise).close();
-        } catch {}
-      })();
-
-      try {
-        teardown();
-      } catch {}
-    });
-
-    try {
-      await attachElementTranslator(webDriver, realmInfo);
-    } catch {
-      // TODO: We blanket all errors about attaching the translator which may not be a good idea.
-      // In Firefox, the realm could be detached so fast we did not finish attach translator.
-      console.warn(`[${shortenRealmId(realmInfo.realmId)}] Realm detached immediately after attached`);
-
-      abortController.abort();
-
-      return;
-    }
+    this.#activeRealms.set(realmId, new RealmSession(this.#webDriver, realmInfo, this.#stubImplementation));
   }
 
-  async #detachRealm(realmInfo: RealmInfo): Promise<void> {
-    const { realmId } = realmInfo;
+  async #detachRealm(realmId: string): Promise<void> {
+    const realmSession = this.#activeRealms.get(realmId);
 
-    const realmContext = this.#activeRealms.get(realmId);
-
-    if (!realmContext) {
+    if (!realmSession) {
       throw new Error(`Realm "${realmId}" has already detached`);
     }
 
-    console.log(
-      `[${shortenRealmId(realmId)}] Detach "${realmInfo.realmType}" realm of browsing context "${realmInfo.browsingContext}" at ${realmInfo.origin}`
-    );
-
-    realmContext.abort();
+    realmSession.close();
 
     this.#activeRealms.delete(realmId);
+  }
+
+  close() {
+    this.#abortController.abort();
   }
 }
 

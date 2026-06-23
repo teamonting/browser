@@ -76,6 +76,7 @@ function addAsMap<T extends Record<string, unknown>>(value: T): WithAsMap<T> {
   return { ...value, asMap: () => value };
 }
 
+// TODO: Rewrite in a class format like RealmSession and WebDriverSession.
 export default async function attachElementTranslator(webDriver: WebDriver, realmInfo: RealmInfo) {
   const channelName = `${TRANSLATOR_CHANNEL_NAME_PREFIX}:${realmInfo.realmId}`;
 
