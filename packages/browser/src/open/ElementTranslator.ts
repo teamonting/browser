@@ -83,7 +83,15 @@ class ElementTranslator {
 
     this.#channelName = `${TRANSLATOR_CHANNEL_NAME_PREFIX}:${realmInfo.realmId}`;
 
-    void this.#asyncConstructor();
+    (async () => {
+      try {
+        void this.#asyncConstructor();
+      } catch (error) {
+        this.#abortController.abort();
+
+        throw error;
+      }
+    })();
   }
 
   async #asyncConstructor(): Promise<void> {
