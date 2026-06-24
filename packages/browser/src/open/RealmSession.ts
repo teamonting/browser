@@ -9,7 +9,7 @@ import { workthru } from 'workthru';
 import { MARSHALLED_ELEMENT_SIGNATURE } from '../common/constant';
 import { isMarshalledElement } from '../common/marshalledElement';
 import { unmarshalToWebElement } from '../common/marshalledElement.host';
-import attachElementTranslator from './private/attachElementTranslator';
+import ElementTranslator from './ElementTranslator';
 import isWebElementLike from './private/isWebElementLike';
 import shortenRealmId from './private/shortenRealmId';
 
@@ -17,7 +17,9 @@ class RealmSession<T extends Stub> extends EventTarget {
   constructor(webDriver: WebDriver, realmInfo: RealmInfo, stubImplementation: StubImplementation<T>) {
     super();
 
-    this.#abortController.signal.addEventListener('abort', () => this.dispatchEvent(new CustomEvent('close')));
+    this.#abortController.signal.addEventListener('abort', () => this.dispatchEvent(new CustomEvent('close')), {
+      once: true
+    });
     this.#realmInfo = realmInfo;
 
     const { browsingContext, realmId } = realmInfo;
@@ -132,8 +134,10 @@ class RealmSession<T extends Stub> extends EventTarget {
       }
     );
 
+    let elementTranslator: ElementTranslator | undefined;
+
     try {
-      await attachElementTranslator(webDriver, realmInfo);
+      elementTranslator = new ElementTranslator(webDriver, realmInfo);
     } catch (error) {
       // TODO: We blanket all errors about attaching the translator which may not be a good idea.
       // In Firefox, the realm could be detached so fast we did not finish attach translator.
@@ -141,6 +145,8 @@ class RealmSession<T extends Stub> extends EventTarget {
 
       throw error;
     }
+
+    this.#abortController.signal.addEventListener('abort', () => elementTranslator.close(), { once: true });
   }
 
   #abortController = new AbortController();
