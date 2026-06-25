@@ -18,6 +18,10 @@
     ".": {
       "types": "./static/index.d.ts",
       "default": "./static/index.js"
+    },
+    "./WebDriverSession.js": {
+      "types": "./static/WebDriverSession.d.ts",
+      "default": "./static/WebDriverSession.js"
     }
   },
   "files": [
