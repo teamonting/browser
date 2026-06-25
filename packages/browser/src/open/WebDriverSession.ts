@@ -121,7 +121,53 @@ class WebDriverSession<T extends Stub> extends EventTarget {
       throw new Error(`Realm "${realmId}" has already attached`);
     }
 
-    this.#activeRealms.set(realmId, new RealmSession(this.#webDriver, realmInfo, this.#stubImplementation));
+    const realm = new RealmSession(this.#webDriver, realmInfo, this.#stubImplementation);
+
+    this.#activeRealms.set(realmId, realm);
+
+    realm.addEventListener('close', () =>
+      this.dispatchEvent(
+        new CustomEvent<{ readonly browsingContext: string; readonly realmId: string }>('realmclose', {
+          detail: Object.freeze({ browsingContext: realmInfo.browsingContext, realmId })
+        })
+      )
+    );
+
+    realm.addEventListener('console', event => {
+      const {
+        detail: { args }
+      } = event satisfies Event as CustomEvent<{ readonly args: readonly unknown[] }>;
+
+      this.dispatchEvent(
+        new CustomEvent<{
+          readonly args: readonly unknown[];
+          readonly browsingContext: string;
+          readonly realmId: string;
+        }>('console', {
+          detail: Object.freeze({ args, browsingContext: realmInfo.browsingContext, realmId })
+        })
+      );
+    });
+
+    realm.addEventListener('error', event => {
+      const {
+        detail: { reason }
+      } = event satisfies Event as CustomEvent<{ readonly reason: unknown }>;
+
+      this.dispatchEvent(
+        new CustomEvent<{ readonly realmId: string; readonly reason: unknown }>('realmload', {
+          detail: Object.freeze({ browsingContext: realmInfo.browsingContext, realmId, reason })
+        })
+      );
+    });
+
+    realm.addEventListener('load', () =>
+      this.dispatchEvent(
+        new CustomEvent<{ readonly realmId: string }>('realmload', {
+          detail: Object.freeze({ browsingContext: realmInfo.browsingContext, realmId })
+        })
+      )
+    );
   }
 
   async #detachRealm(realmId: string): Promise<void> {
