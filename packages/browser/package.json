@@ -20,8 +20,8 @@
       "default": "./static/index.js"
     },
     "./WebDriverSession.js": {
-      "types": "./static/WebDriverSession.d.ts",
-      "default": "./static/WebDriverSession.js"
+      "types": "./dist/WebDriverSession.d.ts",
+      "default": "./dist/WebDriverSession.js"
     }
   },
   "files": [
