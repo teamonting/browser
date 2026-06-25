@@ -7,6 +7,7 @@ import { platform } from 'node:os';
 import WebDriverSession from '../open/WebDriverSession.ts';
 import buildWebDriver from './private/buildWebDriver.ts';
 import isWSL2 from './private/isWSL2.ts';
+import shortenRealmId from './private/shortenRealmId.ts';
 
 program.name('@onting/browser').description('Run browser with RPC stub');
 
@@ -59,4 +60,36 @@ const session = new WebDriverSession(
   }
 );
 
+session.addEventListener(
+  'load',
+  () => {
+    const [url] = program.args;
+
+    url && webDriver.navigate().to(url);
+  },
+  { once: true }
+);
+
 session.addEventListener('closing', () => console.log('Shutting down'), { once: true });
+
+session.addEventListener('console', ({ args, realmId }) => {
+  console.log(`[${shortenRealmId(realmId)}]`, ...args);
+});
+
+session.addEventListener('error', ({ error }) => console.error(error), { once: true });
+
+session.addEventListener('realmclose', ({ browsingContext, origin, realmId, realmType }) => {
+  console.log(
+    `[${shortenRealmId(realmId)}] Detach "${realmType}" realm of browsing context "${browsingContext}" at ${origin}`
+  );
+});
+
+session.addEventListener('realmload', ({ browsingContext, origin, realmId, realmType }) => {
+  console.log(
+    `[${shortenRealmId(realmId)}] Attach "${realmType}" realm of browsing context "${browsingContext}" at ${origin}`
+  );
+});
+
+session.addEventListener('realmerror', ({ realmId, error: reason }) => {
+  console.error(`[${shortenRealmId(realmId)}] Exception caught while attaching to realm.`, reason);
+});

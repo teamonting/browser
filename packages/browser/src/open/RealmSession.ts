@@ -10,37 +10,34 @@ import { MARSHALLED_ELEMENT_SIGNATURE } from '../common/constant';
 import { isMarshalledElement } from '../common/marshalledElement';
 import { unmarshalToWebElement } from '../common/marshalledElement.host';
 import ElementTranslator from './ElementTranslator';
+import { CustomEventTarget, RealmConsoleEvent, RealmErrorEvent, RealmEvent } from './event';
 import deserialize from './private/deserialize';
 import isWebElementLike from './private/isWebElementLike';
-import shortenRealmId from './private/shortenRealmId';
 
-class RealmSession<T extends Stub> extends EventTarget {
+type RealmSessionEventMap = {
+  close: RealmEvent;
+  console: RealmConsoleEvent;
+  error: RealmErrorEvent;
+  load: RealmEvent;
+};
+
+class RealmSession<T extends Stub> extends CustomEventTarget<RealmSessionEventMap> {
   constructor(webDriver: WebDriver, realmInfo: RealmInfo, stubImplementation: StubImplementation<T>) {
     super();
 
-    this.#abortController.signal.addEventListener('abort', () => this.dispatchEvent(new CustomEvent('close')), {
-      once: true
-    });
-
-    this.#realmInfo = realmInfo;
-
-    const { browsingContext, realmId } = realmInfo;
-
-    console.log(
-      `[${shortenRealmId(realmId)}] Attach "${realmInfo.realmType}" realm of browsing context "${browsingContext}" at ${realmInfo.origin}`
+    this.#abortController.signal.addEventListener(
+      'abort',
+      () => this.dispatchEvent(new RealmEvent('close', realmInfo)),
+      { once: true }
     );
 
     (async () => {
       try {
         await this.#asyncConstructor(webDriver, realmInfo, stubImplementation);
-      } catch (reason) {
-        this.dispatchEvent(
-          new CustomEvent<{ readonly reason: unknown }>('realmerror', { detail: Object.freeze({ reason }) })
-        );
+      } catch (error) {
+        this.dispatchEvent(new RealmErrorEvent('error', { ...realmInfo, error }));
 
         this.close();
-
-        console.error(`[${shortenRealmId(realmId)}] Exception caught while attaching to realm.`, reason);
       }
     })();
   }
@@ -61,11 +58,7 @@ class RealmSession<T extends Stub> extends EventTarget {
           const consoleEntryHandler = await logInspector.onConsoleEntry(event => {
             const args: readonly unknown[] = Object.freeze(event.args.map(localValue => deserialize(localValue)));
 
-            console.log(`[${shortenRealmId(realmInfo.realmId)}]`, args);
-
-            this.dispatchEvent(
-              new CustomEvent<{ args: readonly unknown[] }>('console', { detail: Object.freeze({ args }) })
-            );
+            this.dispatchEvent(new RealmConsoleEvent('console', { ...realmInfo, args }));
           });
 
           try {
@@ -93,28 +86,14 @@ class RealmSession<T extends Stub> extends EventTarget {
             );
 
             try {
-              let elementTranslator: ElementTranslator | undefined;
+              const elementTranslator = new ElementTranslator(webDriver, realmInfo);
 
               try {
-                elementTranslator = new ElementTranslator(webDriver, realmInfo);
-              } catch (error) {
-                // TODO: We blanket all errors about attaching the translator which may not be a good idea.
-                // In Firefox, the realm could be detached so fast we did not finish attach translator.
-                console.warn(`[${shortenRealmId(realmInfo.realmId)}] Realm detached immediately after attached`);
-
-                throw error;
-              }
-
-              try {
-                this.dispatchEvent(new CustomEvent('load'));
+                this.dispatchEvent(new RealmEvent('load', realmInfo));
 
                 await new Promise(resolve => this.#abortController.signal.addEventListener('abort', resolve));
 
-                console.log(
-                  `[${shortenRealmId(this.#realmInfo.realmId)}] Detach "${this.#realmInfo.realmType}" realm of browsing context "${this.#realmInfo.browsingContext}" at ${this.#realmInfo.origin}`
-                );
-
-                this.dispatchEvent(new CustomEvent('close'));
+                this.dispatchEvent(new RealmEvent('close', realmInfo));
               } finally {
                 elementTranslator.close();
               }
@@ -136,7 +115,6 @@ class RealmSession<T extends Stub> extends EventTarget {
   }
 
   #abortController = new AbortController();
-  #realmInfo: RealmInfo;
 
   close() {
     this.#abortController.abort();
