@@ -71,19 +71,33 @@ class RealmConsoleEvent extends RealmEvent {
       readonly args: readonly unknown[];
       readonly browsingContext: string;
       readonly origin: string;
+      readonly method: string;
       readonly realmId: string;
       readonly realmType?: string | undefined;
+      readonly timestamp: number;
     }
   ) {
     super(type, eventInitDict);
 
     this.#args = eventInitDict.args;
+    this.#method = eventInitDict.method;
+    this.#timestamp = eventInitDict.timestamp;
   }
 
   #args: readonly unknown[];
+  #method: string;
+  #timestamp: number;
 
   get args(): readonly unknown[] {
     return this.#args;
+  }
+
+  get method(): string {
+    return this.#method;
+  }
+
+  get timestamp(): number {
+    return this.#timestamp;
   }
 }
 

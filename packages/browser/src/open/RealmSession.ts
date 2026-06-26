@@ -56,9 +56,22 @@ class RealmSession<T extends Stub> extends CustomEventTarget<RealmSessionEventMa
 
         try {
           const consoleEntryHandler = await logInspector.onConsoleEntry(event => {
-            const args: readonly unknown[] = Object.freeze(event.args.map(localValue => deserialize(localValue)));
+            if (
+              event.source.browsingContextId === realmInfo.browsingContext &&
+              event.source.realmId === realmInfo.realmId &&
+              event.type === 'console'
+            ) {
+              const args: readonly unknown[] = Object.freeze(event.args.map(localValue => deserialize(localValue)));
 
-            this.dispatchEvent(new RealmConsoleEvent('console', { ...realmInfo, args }));
+              this.dispatchEvent(
+                new RealmConsoleEvent('console', {
+                  ...realmInfo,
+                  args,
+                  method: event.method,
+                  timestamp: event.timeStamp
+                })
+              );
+            }
           });
 
           try {
