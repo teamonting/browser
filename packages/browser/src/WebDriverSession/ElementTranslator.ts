@@ -65,78 +65,83 @@ class ElementTranslator {
 
     this.#channelName = `${TRANSLATOR_CHANNEL_NAME_PREFIX}:${realmInfo.realmId}`;
 
-    (async () => {
-      try {
-        void this.#asyncConstructor();
-      } catch (error) {
-        this.#abortController.abort();
+    this.#abortedPromise = new Promise(resolve =>
+      this.#abortController.signal.addEventListener('abort', () => resolve(), { once: true })
+    );
 
-        throw error;
-      }
-    })();
+    void this.#asyncConstructor();
   }
 
   async #asyncConstructor(): Promise<void> {
-    const scriptManager = await getScriptManagerInstance(this.#realmInfo.browsingContext, this.#webDriver);
+    await using disposer = new AsyncDisposableStack();
 
-    const messageHandler = await scriptManager.onMessage(event => {
-      // For unknown reasons, scriptManager.onMessage could be called with RealmInfo, WindowRealmInfo, etc.
-      if (!event || !('channel' in event) || event.channel !== this.#channelName) {
-        return;
-      }
+    const scriptManager = disposer.adopt(
+      await getScriptManagerInstance(this.#realmInfo.browsingContext, this.#webDriver),
+      scriptManager => scriptManager.close().catch(() => {})
+    );
 
-      const eventSourceResult = safeParse(eventWithSourceSchema, event);
-
-      if (!eventSourceResult.success) {
-        console.error('Internal error: ScriptManager.onMessage should have `event.source.realmId` of string.');
-
-        return;
-      }
-
-      const {
-        output: {
-          source: { realmId }
+    disposer.adopt(
+      await scriptManager.onMessage(event => {
+        // For unknown reasons, scriptManager.onMessage could be called with RealmInfo, WindowRealmInfo, etc.
+        if (!event || !('channel' in event) || event.channel !== this.#channelName) {
+          return;
         }
-      } = eventSourceResult;
 
-      (async () => {
-        for (const element of parse(array(entrySchema), deserialize(event.data.value))) {
-          let nodeRemoteValue: RemoteNode | undefined = element[1].element;
-          const remoteElementLocalValue = element[1].remoteElement;
-          let sharedIdLocalValue = remoteElementLocalValue?.sharedId;
+        const eventSourceResult = safeParse(eventWithSourceSchema, event);
 
-          if (typeof nodeRemoteValue !== 'undefined') {
-            // With WebElement (RemoteValue of type "node"), translate WebElement -> ID.
-            sharedIdLocalValue = nodeRemoteValue.sharedId;
-          } else if (typeof sharedIdLocalValue !== 'undefined') {
-            // With shared ID, fake a RemoteValue to send to the browser, arriving in browser as DOM element.
-            // So we can translate ID -> DOM element.
-            nodeRemoteValue = new RemoteNode(sharedIdLocalValue);
+        if (!eventSourceResult.success) {
+          console.error('Internal error: ScriptManager.onMessage should have `event.source.realmId` of string.');
+
+          return;
+        }
+
+        const {
+          output: {
+            source: { realmId }
           }
+        } = eventSourceResult;
 
-          await scriptManager.callFunctionInRealm(
-            realmId,
-            '' +
-              ((returnSymbol: string, key: string, element: Element, sharedId: string): void => {
-                (globalThis as GlobalThisWithTranslator)[
-                  Symbol.for(returnSymbol) as typeof TRANSLATOR_HOST_RETURN_SYMBOL
-                ](key, element, { sharedId });
-              }),
-            true,
-            [
-              LocalValue.createStringValue(TRANSLATOR_HOST_RETURN_SYMBOL.description!),
-              LocalValue.createStringValue(element[0]),
-              createRemoteNodeValue(sharedIdLocalValue!),
-              LocalValue.createStringValue(sharedIdLocalValue!)
-            ]
-          );
-        }
-      })();
-    });
+        (async () => {
+          for (const element of parse(array(entrySchema), deserialize(event.data.value))) {
+            let nodeRemoteValue: RemoteNode | undefined = element[1].element;
+            const remoteElementLocalValue = element[1].remoteElement;
+            let sharedIdLocalValue = remoteElementLocalValue?.sharedId;
 
-    this.#abortController.signal.addEventListener('abort', () => scriptManager.removeCallback(messageHandler), {
-      once: true
-    });
+            if (typeof nodeRemoteValue !== 'undefined') {
+              // With WebElement (RemoteValue of type "node"), translate WebElement -> ID.
+              sharedIdLocalValue = nodeRemoteValue.sharedId;
+            } else if (typeof sharedIdLocalValue !== 'undefined') {
+              // With shared ID, fake a RemoteValue to send to the browser, arriving in browser as DOM element.
+              // So we can translate ID -> DOM element.
+              nodeRemoteValue = new RemoteNode(sharedIdLocalValue);
+            }
+
+            try {
+              await scriptManager.callFunctionInRealm(
+                realmId,
+                '' +
+                  ((returnSymbol: string, key: string, element: Element, sharedId: string): void => {
+                    (globalThis as GlobalThisWithTranslator)[
+                      Symbol.for(returnSymbol) as typeof TRANSLATOR_HOST_RETURN_SYMBOL
+                    ](key, element, { sharedId });
+                  }),
+                true,
+                [
+                  LocalValue.createStringValue(TRANSLATOR_HOST_RETURN_SYMBOL.description!),
+                  LocalValue.createStringValue(element[0]),
+                  createRemoteNodeValue(sharedIdLocalValue!),
+                  LocalValue.createStringValue(sharedIdLocalValue!)
+                ]
+              );
+            } catch (error) {
+              // If one request failed, don't fail the whole handler.
+              console.error(error);
+            }
+          }
+        })();
+      }),
+      messageHandler => scriptManager.removeCallback(messageHandler)
+    );
 
     if (this.#abortController.signal.aborted) {
       return;
@@ -172,15 +177,22 @@ class ElementTranslator {
       true,
       [LocalValue.createStringValue(TRANSLATOR_NOTIFY_HOST_SYMBOL.description!)]
     );
+
+    await this.#abortedPromise;
   }
 
   #abortController: AbortController = new AbortController();
+  #abortedPromise: Promise<void>;
   #channelName: string;
   #realmInfo: RealmInfo;
   #webDriver: WebDriver;
 
-  close() {
+  [Symbol.dispose]() {
     this.#abortController.abort();
+  }
+
+  close() {
+    this[Symbol.dispose]();
   }
 }
 

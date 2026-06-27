@@ -43,94 +43,91 @@ class RealmSession<T extends Stub> extends CustomEventTarget<RealmSessionEventMa
   }
 
   async #asyncConstructor(webDriver: WebDriver, realmInfo: RealmInfo, stubImplementation: StubImplementation<T>) {
+    using disposer = new DisposableStack();
+
     // TODO: It seems `selenium-webdriver@4.44.0` is bugged.
     //       If we use a shared `ScriptManager`, we will receive channel messages more than once.
     //       It seems if `onMessage()` is called twice, `selenium-webdriver` will call every `onMessage()` twice as well (4 times in total).
-    const scriptManager = await getScriptManagerInstance(realmInfo.browsingContext, webDriver);
+    const scriptManager = disposer.adopt(
+      await getScriptManagerInstance(realmInfo.browsingContext, webDriver),
+      scriptManager => scriptManager.close().catch(() => {})
+    );
 
-    try {
-      const { messagePort } = await viaBiDi(scriptManager, { realmId: realmInfo.realmId });
+    const messagePort = disposer.adopt(
+      (await viaBiDi(scriptManager, { realmId: realmInfo.realmId })).messagePort,
+      messagePort => messagePort.close()
+    );
 
-      try {
-        const logInspector = await getLogInspectorInstance(webDriver, [realmInfo.browsingContext]);
+    const logInspector = disposer.adopt(
+      await getLogInspectorInstance(webDriver, [realmInfo.browsingContext]),
+      logInspector => logInspector.close().catch(() => {})
+    );
 
-        try {
-          const consoleEntryHandler = await logInspector.onConsoleEntry(event => {
-            if (
-              event.source.browsingContextId === realmInfo.browsingContext &&
-              event.source.realmId === realmInfo.realmId &&
-              event.type === 'console'
-            ) {
-              const args: readonly unknown[] = Object.freeze(event.args.map(localValue => deserialize(localValue)));
+    disposer.adopt(
+      await logInspector.onConsoleEntry(event => {
+        if (
+          event.source.browsingContextId === realmInfo.browsingContext &&
+          event.source.realmId === realmInfo.realmId &&
+          event.type === 'console'
+        ) {
+          const args: readonly unknown[] = Object.freeze(event.args.map(localValue => deserialize(localValue)));
 
-              this.dispatchEvent(
-                new RealmConsoleEvent('console', {
-                  ...realmInfo,
-                  args,
-                  method: event.method,
-                  timestamp: event.timeStamp
-                })
-              );
-            }
-          });
-
-          try {
-            const teardown = listen<StubImplementation<T>, T>(
-              stubImplementation,
-              {
-                browsingContext: await BrowsingContext(webDriver, { browsingContextId: realmInfo.browsingContext }),
-                webDriver
-              },
-              messagePort,
-              {
-                async marshal(value: unknown) {
-                  return await workthru(value, async value =>
-                    isWebElementLike(value)
-                      ? [MARSHALLED_ELEMENT_SIGNATURE, { sharedId: await (value as unknown as WebElement).getId() }]
-                      : value
-                  );
-                },
-                async unmarshal(value: unknown) {
-                  return await workthru(value, async value =>
-                    isMarshalledElement(value) ? await unmarshalToWebElement(value, webDriver) : value
-                  );
-                }
-              }
-            );
-
-            try {
-              const elementTranslator = new ElementTranslator(webDriver, realmInfo);
-
-              try {
-                this.dispatchEvent(new RealmEvent('load', realmInfo));
-
-                await new Promise(resolve => this.#abortController.signal.addEventListener('abort', resolve));
-
-                this.dispatchEvent(new RealmEvent('close', realmInfo));
-              } finally {
-                elementTranslator.close();
-              }
-            } finally {
-              teardown();
-            }
-          } finally {
-            logInspector?.removeCallback(consoleEntryHandler);
-          }
-        } finally {
-          logInspector?.close().catch(error => console.error(error));
+          this.dispatchEvent(
+            new RealmConsoleEvent('console', {
+              ...realmInfo,
+              args,
+              method: event.method,
+              timestamp: event.timeStamp
+            })
+          );
         }
-      } finally {
-        messagePort?.close();
-      }
-    } finally {
-      scriptManager?.close().catch(error => console.error(error));
-    }
+      }),
+      handler => logInspector.removeCallback(handler)
+    );
+
+    disposer.adopt(
+      listen<StubImplementation<T>, T>(
+        stubImplementation,
+        {
+          browsingContext: await BrowsingContext(webDriver, { browsingContextId: realmInfo.browsingContext }),
+          webDriver
+        },
+        messagePort,
+        {
+          async marshal(value: unknown) {
+            return await workthru(value, async value =>
+              isWebElementLike(value)
+                ? [MARSHALLED_ELEMENT_SIGNATURE, { sharedId: await (value as unknown as WebElement).getId() }]
+                : value
+            );
+          },
+          async unmarshal(value: unknown) {
+            return await workthru(value, async value =>
+              isMarshalledElement(value) ? await unmarshalToWebElement(value, webDriver) : value
+            );
+          }
+        }
+      ),
+      teardown => teardown()
+    );
+
+    disposer.use(new ElementTranslator(webDriver, realmInfo));
+
+    this.dispatchEvent(new RealmEvent('load', realmInfo));
+
+    await new Promise(resolve => this.#abortController.signal.addEventListener('abort', resolve));
+
+    this.dispatchEvent(new RealmEvent('close', realmInfo));
   }
 
   #abortController = new AbortController();
 
-  close() {
+  [Symbol.dispose]() {
     this.#abortController.abort();
+  }
+
+  close() {
+    this[Symbol.dispose]();
   }
 }
 

@@ -15,6 +15,7 @@ import {
 } from './event.ts';
 import createSequencer from './private/createSequencer.ts';
 import delta from './private/delta.ts';
+import doInterval from './private/doInterval.ts';
 import RealmSession from './RealmSession.ts';
 
 type WebDriverSessionEventMap = {
@@ -39,6 +40,12 @@ class WebDriverSession<T extends Stub> extends CustomEventTarget<WebDriverSessio
   }
 
   async #asyncConstructor() {
+    await using disposer = new AsyncDisposableStack();
+
+    disposer.defer(() => {
+      this.dispatchEvent(new WebDriverEvent('close'));
+    });
+
     try {
       // Patch WebSocket so to handle large amount of ScriptManager.
       const { socket } = await this.#webDriver.getBidi();
@@ -46,68 +53,85 @@ class WebDriverSession<T extends Stub> extends CustomEventTarget<WebDriverSessio
       'setMaxListeners' in socket && typeof socket.setMaxListeners === 'function' && socket.setMaxListeners(100);
 
       // @types/selenium-webdriver@4.35.0 does not match selenium-webdriver@4.44.0
-      const rootScriptManager = await getScriptManagerInstance(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        null as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this.#webDriver as any
+      const rootScriptManager = disposer.adopt(
+        await getScriptManagerInstance(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          null as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          this.#webDriver as any
+        ),
+        rootScriptManager => rootScriptManager.close().catch(() => {})
       );
+
+      this.dispatchEvent(new WebDriverEvent('load'));
 
       const sequenceReconcileRealmsCall = createSequencer();
 
       const reconcileRealms = (): Promise<void> => {
         return sequenceReconcileRealmsCall(async () => {
+          let realms: readonly RealmInfo[];
+
           try {
-            const realms = (await rootScriptManager.getAllRealms()) as readonly RealmInfo[];
-
-            const realmMap = new Map<string, RealmInfo>(realms.map(realm => [realm.realmId, realm]));
-
-            const [added, _, deleted] = delta<string>(new Set(realmMap.keys()), new Set(this.#activeRealms.keys()));
-
-            for (const realmId of deleted.values()) {
-              try {
-                await this.#detachRealm(realmId);
-              } catch (error) {
-                console.error(error);
-              }
-            }
-
-            for (const realmId of added.values()) {
-              try {
-                await this.#attachRealm(realmMap.get(realmId)!);
-              } catch (error) {
-                console.error(error);
-              }
-            }
+            realms = (await rootScriptManager.getAllRealms()) as readonly RealmInfo[];
           } catch (error) {
             // Keep host running despite realm issues.
-            console.error(error);
+            this.#aborted || console.error(error);
+
+            return;
+          }
+
+          const realmMap = new Map<string, RealmInfo>(realms.map(realm => [realm.realmId, realm]));
+
+          const [added, _, deleted] = delta<string>(new Set(realmMap.keys()), new Set(this.#activeRealms.keys()));
+
+          for (const realmId of deleted.values()) {
+            try {
+              await this.#detachRealm(realmId);
+            } catch (error) {
+              this.#aborted || console.error(error);
+            }
+          }
+
+          for (const realmId of added.values()) {
+            try {
+              await this.#attachRealm(realmMap.get(realmId)!);
+            } catch (error) {
+              this.#aborted || console.error(error);
+            }
           }
         });
       };
 
-      await reconcileRealms();
-
       await rootScriptManager.onRealmCreated(() => void reconcileRealms());
       await rootScriptManager.onRealmDestroyed(() => void reconcileRealms());
 
-      this.dispatchEvent(new WebDriverEvent('load'));
+      await reconcileRealms();
 
-      for (;;) {
-        try {
-          // Detects when user closed the browser manually.
-          await this.#webDriver.getAllWindowHandles();
-        } catch (error) {
-          if (error instanceof SeleniumWebDriverError.NoSuchSessionError) {
-            break;
+      disposer.defer(() => {
+        for (const realm of this.#activeRealms.values()) {
+          realm.close();
+        }
+      });
+
+      await doInterval(
+        async () => {
+          try {
+            // Detects when user closed the browser manually.
+            await this.#webDriver.getAllWindowHandles();
+          } catch (error) {
+            error instanceof SeleniumWebDriverError.NoSuchSessionError || console.error(error);
+
+            // CTRL+W on Firefox will cause Marionette error than SeleniumWebDriverError.NoSuchSessionError.
+            // Thus, any error could be related to both shutdown or other issues.
+            return false;
           }
 
-          throw error;
-        }
-
+          return;
+        },
         // WebDriver.getAllWindowHandles() is not event-driven, we need to call it once every second or so.
-        await new Promise(resolve => setTimeout(resolve, 1_000));
-      }
+        1_000,
+        { signal: this.#abortController.signal }
+      );
 
       // We cannot use SIGINT to shutdown browsers automatically.
       // When WSL2 is running chromedriver.exe (on Windows):
@@ -120,16 +144,7 @@ class WebDriverSession<T extends Stub> extends CustomEventTarget<WebDriverSessio
       // However, for Linux binary of chromedriver, it works. Maybe it is about how WSL2 terminate Windows-side child processes.
 
       this.dispatchEvent(new WebDriverEvent('closing'));
-
-      try {
-        await rootScriptManager.close();
-      } catch {}
-
-      for (const realmContext of this.#activeRealms.values()) {
-        realmContext.close();
-      }
-
-      this.dispatchEvent(new WebDriverEvent('close'));
+      this.close();
     } catch (error) {
       this.dispatchEvent(new WebDriverErrorEvent('error', { error }));
     }
@@ -139,6 +154,10 @@ class WebDriverSession<T extends Stub> extends CustomEventTarget<WebDriverSessio
   #activeRealms: Map<string, RealmSession<T>> = new Map();
   #stubImplementation: StubImplementation<T>;
   #webDriver: WebDriver;
+
+  get #aborted(): boolean {
+    return this.#abortController.signal.aborted;
+  }
 
   async #attachRealm(realmInfo: RealmInfo): Promise<void> {
     const { realmId } = realmInfo;
@@ -170,11 +189,11 @@ class WebDriverSession<T extends Stub> extends CustomEventTarget<WebDriverSessio
   }
 
   [Symbol.dispose]() {
-    this.close();
+    this.#abortController.abort();
   }
 
   close() {
-    this.#abortController.abort();
+    this[Symbol.dispose]();
   }
 }
 

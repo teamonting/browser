@@ -2,7 +2,7 @@ import { Options as ChromeOptions } from 'selenium-webdriver/chrome.js';
 import { Options as EdgeOptions } from 'selenium-webdriver/edge.js';
 import { Options as FirefoxOptions } from 'selenium-webdriver/firefox.js';
 import { Options as SafariOptions } from 'selenium-webdriver/safari.js';
-import { Browser, Builder, type WebDriver } from 'selenium-webdriver';
+import { error as SeleniumWebDriverError, Browser, Builder, type WebDriver } from 'selenium-webdriver';
 
 type WithAsyncDispose<T> = T & {
   [Symbol.asyncDispose](): Promise<void>;
@@ -11,7 +11,11 @@ type WithAsyncDispose<T> = T & {
 function addAsyncDispose(webDriver: WebDriver): WithAsyncDispose<WebDriver> {
   return Object.assign(webDriver, {
     async [Symbol.asyncDispose]() {
-      await webDriver.quit();
+      try {
+        await webDriver.quit();
+      } catch (error) {
+        error instanceof SeleniumWebDriverError.NoSuchSessionError || console.error(error);
+      }
     }
   });
 }
