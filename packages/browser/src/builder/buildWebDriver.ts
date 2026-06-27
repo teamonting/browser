@@ -4,6 +4,15 @@ import { Options as FirefoxOptions } from 'selenium-webdriver/firefox.js';
 import { Options as SafariOptions } from 'selenium-webdriver/safari.js';
 import { Browser, Builder, type WebDriver } from 'selenium-webdriver';
 
+function addAsyncDispose(webDriver: Omit<WebDriver, typeof Symbol.asyncDispose>): WebDriver {
+  return {
+    ...webDriver,
+    async [Symbol.asyncDispose]() {
+      await webDriver.quit();
+    }
+  };
+}
+
 async function buildWebDriver(
   browser: 'chrome' | 'edge' | 'firefox' | 'safari',
   serverURL: string
@@ -14,7 +23,9 @@ async function buildWebDriver(
 
       options.enableBidi();
 
-      return await new Builder().forBrowser(Browser.EDGE).setEdgeOptions(options).usingServer(serverURL).build();
+      return addAsyncDispose(
+        await new Builder().forBrowser(Browser.EDGE).setEdgeOptions(options).usingServer(serverURL).build()
+      );
     }
 
     case 'firefox': {
@@ -22,7 +33,9 @@ async function buildWebDriver(
 
       options.enableBidi();
 
-      return await new Builder().forBrowser(Browser.FIREFOX).setFirefoxOptions(options).usingServer(serverURL).build();
+      return addAsyncDispose(
+        await new Builder().forBrowser(Browser.FIREFOX).setFirefoxOptions(options).usingServer(serverURL).build()
+      );
     }
 
     case 'safari': {
@@ -30,7 +43,9 @@ async function buildWebDriver(
 
       'enableBidi' in options && typeof options.enableBidi === 'function' && options.enableBidi();
 
-      return await new Builder().forBrowser(Browser.SAFARI).setSafariOptions(options).usingServer(serverURL).build();
+      return addAsyncDispose(
+        await new Builder().forBrowser(Browser.SAFARI).setSafariOptions(options).usingServer(serverURL).build()
+      );
     }
 
     default: {
@@ -40,7 +55,9 @@ async function buildWebDriver(
 
       options.enableBidi();
 
-      return await new Builder().forBrowser(Browser.CHROME).setChromeOptions(options).usingServer(serverURL).build();
+      return addAsyncDispose(
+        await new Builder().forBrowser(Browser.CHROME).setChromeOptions(options).usingServer(serverURL).build()
+      );
     }
   }
 }

@@ -18,7 +18,15 @@ async function buildFirefoxService({
 
   pipeStdio && builder.setStdio([0, 1, 2]);
 
-  return builder.build();
+  const nativeDriverService = builder.build();
+
+  return Object.freeze({
+    [Symbol.asyncDispose]: () => nativeDriverService.kill(),
+    address: () => nativeDriverService.address(),
+    isRunning: () => nativeDriverService.isRunning(),
+    kill: () => nativeDriverService.kill(),
+    start: (timeoutMS?: number | undefined) => nativeDriverService.start(timeoutMS)
+  });
 }
 
 export default buildFirefoxService;

@@ -81,6 +81,7 @@ declare module 'selenium-webdriver' {
     manage(): { logs(): { get(type: string): Promise<readonly logging.Entry[]> } };
     navigate(): { to(url: string): Promise<void> };
     quit(): Promise<void>;
+    [Symbol.asyncDispose](): Promise<void>;
   }
 
   class ShadowRoot {
@@ -136,7 +137,7 @@ declare module 'selenium-webdriver' {
   }
 
   class Builder {
-    build(): Promise<WebDriver>;
+    build(): Promise<Omit<WebDriver, typeof Symbol.asyncDispose>>;
     disableEnvironmentOverrides(): this;
     forBrowser(name: string, version?: string, platform?: string): this;
     getCapabilities(): unknown;
