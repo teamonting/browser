@@ -1,0 +1,37 @@
+import buildChromeService from './private/buildChromeService.ts';
+import buildEdgeService from './private/buildEdgeService.ts';
+import buildFirefoxService from './private/buildFirefoxService.ts';
+import buildSafariService from './private/buildSafariService.ts';
+import getIP from './private/getIP.ts';
+import type { DriverService } from './type.d.ts';
+
+async function buildDriverService(
+  browser: 'chrome' | 'edge' | 'firefox' | 'safari',
+  {
+    pipeStdio,
+    useWindowsBinary
+  }: {
+    readonly pipeStdio: boolean;
+    readonly useWindowsBinary: boolean;
+  }
+): Promise<DriverService> {
+  const { hostIP, localIP } = await getIP({ useWindowsBinary });
+
+  switch (browser) {
+    case 'edge':
+      return await buildEdgeService({ hostIP, localIP, pipeStdio, useWindowsBinary });
+
+    case 'firefox':
+      return await buildFirefoxService({ hostIP, pipeStdio, useWindowsBinary });
+
+    case 'safari':
+      return await buildSafariService({ hostIP, pipeStdio });
+
+    default:
+      browser satisfies 'chrome';
+
+      return await buildChromeService({ hostIP, localIP, pipeStdio, useWindowsBinary });
+  }
+}
+
+export default buildDriverService;

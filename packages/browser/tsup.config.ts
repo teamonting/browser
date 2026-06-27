@@ -11,6 +11,7 @@ export default defineConfig([
   {
     dts: true,
     entry: {
+      builder: './src/builder/index.ts',
       WebDriverSession: './src/WebDriverSession/index.ts'
     },
     format: 'esm',

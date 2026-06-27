@@ -19,6 +19,10 @@
       "types": "./static/index.d.ts",
       "default": "./static/index.js"
     },
+    "./builder.js": {
+      "types": "./dist/builder.d.ts",
+      "default": "./dist/builder.js"
+    },
     "./WebDriverSession.js": {
       "types": "./dist/WebDriverSession.d.ts",
       "default": "./dist/WebDriverSession.js"

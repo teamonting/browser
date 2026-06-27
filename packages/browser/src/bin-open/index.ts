@@ -5,7 +5,7 @@
 import { program } from 'commander';
 import { platform } from 'node:os';
 import { WebDriverSession } from '../WebDriverSession/index.ts';
-import buildWebDriver from './private/buildWebDriver.ts';
+import { buildDriverService, buildWebDriver } from '../builder/index.ts';
 import isWSL2 from './private/isWSL2.ts';
 import shortenRealmId from './private/shortenRealmId.ts';
 
@@ -46,50 +46,70 @@ if (opts.wsl && !(await isWSL2())) {
 }
 
 // TODO: If `--chrome` is not set, we will default to "chrome" but we should warn user that default behavior could change anytime.
-const webDriver = await buildWebDriver(
-  opts.edge ? 'edge' : opts.firefox ? 'firefox' : opts.safari ? 'safari' : 'chrome',
-  { pipeStdio: !!opts.pipe, useWindowsBinary }
-);
+const browser = opts.edge ? 'edge' : opts.firefox ? 'firefox' : opts.safari ? 'safari' : 'chrome';
 
-const session = new WebDriverSession(
-  webDriver,
-  // Security risk: intentionally load code from user-supplied path.
-  {
-    ...(await import(`${opts.stub}`)).default,
-    ...(await import(`${opts.stub}/implementation`)).default
+// const webDriver = await buildWebDriver(
+//   opts.edge ? 'edge' : opts.firefox ? 'firefox' : opts.safari ? 'safari' : 'chrome',
+//   { pipeStdio: !!opts.pipe, useWindowsBinary }
+// );
+
+const driverService = await buildDriverService(browser, { pipeStdio: !!opts.pipe, useWindowsBinary });
+
+try {
+  const webDriver = await buildWebDriver(browser, await driverService.start());
+
+  try {
+    const session = new WebDriverSession(
+      webDriver,
+      // Security risk: intentionally load code from user-supplied path.
+      {
+        ...(await import(`${opts.stub}`)).default,
+        ...(await import(`${opts.stub}/implementation`)).default
+      }
+    );
+
+    try {
+      session.addEventListener(
+        'load',
+        () => {
+          const [url] = program.args;
+
+          url && webDriver.navigate().to(url);
+        },
+        { once: true }
+      );
+
+      session.addEventListener('closing', () => console.log('Shutting down'), { once: true });
+
+      session.addEventListener('console', ({ args, realmId }) => {
+        console.log(`[${shortenRealmId(realmId)}]`, ...args);
+      });
+
+      session.addEventListener('error', ({ error }) => console.error(error), { once: true });
+
+      session.addEventListener('realmclose', ({ browsingContext, origin, realmId, realmType }) => {
+        console.log(
+          `[${shortenRealmId(realmId)}] Detach "${realmType}" realm of browsing context "${browsingContext}" at ${origin}`
+        );
+      });
+
+      session.addEventListener('realmload', ({ browsingContext, origin, realmId, realmType }) => {
+        console.log(
+          `[${shortenRealmId(realmId)}] Attach "${realmType}" realm of browsing context "${browsingContext}" at ${origin}`
+        );
+      });
+
+      session.addEventListener('realmerror', ({ realmId, error: reason }) => {
+        console.error(`[${shortenRealmId(realmId)}] Exception caught while attaching to realm.`, reason);
+      });
+
+      await new Promise<void>(resolve => session.addEventListener('close', () => resolve()));
+    } finally {
+      session.close();
+    }
+  } finally {
+    await webDriver.quit();
   }
-);
-
-session.addEventListener(
-  'load',
-  () => {
-    const [url] = program.args;
-
-    url && webDriver.navigate().to(url);
-  },
-  { once: true }
-);
-
-session.addEventListener('closing', () => console.log('Shutting down'), { once: true });
-
-session.addEventListener('console', ({ args, realmId }) => {
-  console.log(`[${shortenRealmId(realmId)}]`, ...args);
-});
-
-session.addEventListener('error', ({ error }) => console.error(error), { once: true });
-
-session.addEventListener('realmclose', ({ browsingContext, origin, realmId, realmType }) => {
-  console.log(
-    `[${shortenRealmId(realmId)}] Detach "${realmType}" realm of browsing context "${browsingContext}" at ${origin}`
-  );
-});
-
-session.addEventListener('realmload', ({ browsingContext, origin, realmId, realmType }) => {
-  console.log(
-    `[${shortenRealmId(realmId)}] Attach "${realmType}" realm of browsing context "${browsingContext}" at ${origin}`
-  );
-});
-
-session.addEventListener('realmerror', ({ realmId, error: reason }) => {
-  console.error(`[${shortenRealmId(realmId)}] Exception caught while attaching to realm.`, reason);
-});
+} finally {
+  await driverService.kill();
+}

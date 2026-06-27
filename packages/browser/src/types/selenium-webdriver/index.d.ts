@@ -35,8 +35,11 @@ declare module 'selenium-webdriver' {
   }
 
   const Browser: {
-    CHROME: string;
-    [key: string]: string;
+    CHROME: 'chrome';
+    EDGE: 'MicrosoftEdge';
+    FIREFOX: 'firefox';
+    INTERNET_EXPLORER: 'internet explorer';
+    SAFARI: 'safari';
   };
 
   interface BrowsingContextInstance {
@@ -134,9 +137,32 @@ declare module 'selenium-webdriver' {
 
   class Builder {
     build(): Promise<WebDriver>;
-    forBrowser(browser: string): this;
+    disableEnvironmentOverrides(): this;
+    forBrowser(name: string, version?: string, platform?: string): this;
+    getCapabilities(): unknown;
+    getChromeOptions(): unknown;
+    getFirefoxOptions(): unknown;
+    getHttpAgent(): import('node:http').Agent | null;
+    getSafariOptions(): unknown;
+    getServerUrl(): string;
+    getWebDriverProxy(): string | null;
+    setAlertBehavior(behavior: unknown): this;
+    setCapability(key: string, value: unknown): this;
     setChromeOptions(options: unknown): this;
+    setChromeService(service: unknown): this;
+    setEdgeOptions(options: unknown): this;
+    setEdgeService(service: unknown): this;
+    setFirefoxOptions(options: unknown): this;
+    setFirefoxService(service: unknown): this;
+    setIeOptions(options: unknown): this;
+    setIeService(service: unknown): this;
+    setLoggingPrefs(prefs: logging.Preferences | Record<string, string>): this;
+    setProxy(config: unknown): this;
+    setSafariOptions(options: unknown): this;
+    usingHttpAgent(agent: import('node:http').Agent): this;
     usingServer(url: string): this;
+    usingWebDriverProxy(proxy: string): this;
+    withCapabilities(capabilities: unknown): this;
   }
 
   namespace error {
