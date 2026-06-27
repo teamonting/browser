@@ -4,7 +4,7 @@
 
 import { program } from 'commander';
 import { platform } from 'node:os';
-import WebDriverSession from '../open/WebDriverSession.ts';
+import { WebDriverSession } from '../WebDriverSession/index.ts';
 import buildWebDriver from './private/buildWebDriver.ts';
 import isWSL2 from './private/isWSL2.ts';
 import shortenRealmId from './private/shortenRealmId.ts';
