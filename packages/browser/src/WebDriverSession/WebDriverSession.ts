@@ -169,6 +169,10 @@ class WebDriverSession<T extends Stub> extends CustomEventTarget<WebDriverSessio
     this.#activeRealms.delete(realmId);
   }
 
+  [Symbol.dispose]() {
+    this.close();
+  }
+
   close() {
     this.#abortController.abort();
   }
