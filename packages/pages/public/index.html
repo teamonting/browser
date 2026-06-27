@@ -35,7 +35,7 @@
       // Set viewport
       await stub.setViewport(640, 480);
 
-      console.log('set viewport');
+      console.log('set viewport', { one: 1, two: [2], three: 3 });
 
       // Print timestamp
       const timestamp = await stub.getTimestamp();
@@ -56,6 +56,8 @@
 
       await stub.type('Hello, World!', { selectAllBeforeType: true });
       await stub.type('Aloha!', { selectAllBeforeType: true });
+
+      console.log('🆗');
     </script>
   </body>
 </html>
