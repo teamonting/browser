@@ -4,19 +4,22 @@ import { Options as FirefoxOptions } from 'selenium-webdriver/firefox.js';
 import { Options as SafariOptions } from 'selenium-webdriver/safari.js';
 import { Browser, Builder, type WebDriver } from 'selenium-webdriver';
 
-function addAsyncDispose(webDriver: Omit<WebDriver, typeof Symbol.asyncDispose>): WebDriver {
-  return {
-    ...webDriver,
+type WithAsyncDispose<T> = T & {
+  [Symbol.asyncDispose](): Promise<void>;
+};
+
+function addAsyncDispose(webDriver: WebDriver): WithAsyncDispose<WebDriver> {
+  return Object.assign(webDriver, {
     async [Symbol.asyncDispose]() {
       await webDriver.quit();
     }
-  };
+  });
 }
 
 async function buildWebDriver(
   browser: 'chrome' | 'edge' | 'firefox' | 'safari',
   serverURL: string
-): Promise<WebDriver> {
+): Promise<WithAsyncDispose<WebDriver>> {
   switch (browser) {
     case 'edge': {
       const options = new EdgeOptions();

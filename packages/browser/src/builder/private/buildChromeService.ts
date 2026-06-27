@@ -22,12 +22,10 @@ async function buildChromeService({
 
   const nativeDriverService = builder.build();
 
-  return Object.freeze({
-    [Symbol.asyncDispose]: () => nativeDriverService.kill(),
-    address: () => nativeDriverService.address(),
-    isRunning: () => nativeDriverService.isRunning(),
-    kill: () => nativeDriverService.kill(),
-    start: (timeoutMS?: number | undefined) => nativeDriverService.start(timeoutMS)
+  return Object.assign(nativeDriverService, {
+    async [Symbol.asyncDispose]() {
+      await nativeDriverService.kill();
+    }
   });
 }
 
