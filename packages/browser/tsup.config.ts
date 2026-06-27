@@ -11,7 +11,7 @@ export default defineConfig([
   {
     dts: true,
     entry: {
-      WebDriverSession: './src/open/index.ts'
+      WebDriverSession: './src/WebDriverSession/index.ts'
     },
     format: 'esm',
     sourcemap: true,
