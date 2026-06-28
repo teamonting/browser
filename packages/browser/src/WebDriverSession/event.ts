@@ -1,3 +1,5 @@
+import { picklist, type InferOutput } from 'valibot';
+
 abstract class CustomEventTarget<T extends { [K: string]: Event }> extends EventTarget {
   override addEventListener<K extends string>(
     type: K,
@@ -64,14 +66,35 @@ class RealmEvent extends Event {
   }
 }
 
+const realmConsoleEventMethodSchema = picklist([
+  'assert',
+  'clear',
+  'count',
+  'debug',
+  'dir',
+  'dirxml',
+  'error',
+  'group',
+  'groupCollapsed',
+  'groupEnd',
+  'info',
+  'log',
+  'table',
+  'timeEnd',
+  'trace',
+  'warn'
+]);
+
+type RealmConsoleEventMethod = InferOutput<typeof realmConsoleEventMethodSchema>;
+
 class RealmConsoleEvent extends RealmEvent {
   constructor(
     type: string,
     eventInitDict: {
-      readonly args: readonly unknown[];
       readonly browsingContext: string;
+      readonly data: readonly unknown[];
       readonly origin: string;
-      readonly method: string;
+      readonly method: RealmConsoleEventMethod;
       readonly realmId: string;
       readonly realmType?: string | undefined;
       readonly timestamp: number;
@@ -79,20 +102,20 @@ class RealmConsoleEvent extends RealmEvent {
   ) {
     super(type, eventInitDict);
 
-    this.#args = eventInitDict.args;
+    this.#data = eventInitDict.data;
     this.#method = eventInitDict.method;
     this.#timestamp = eventInitDict.timestamp;
   }
 
-  #args: readonly unknown[];
-  #method: string;
+  #data: readonly unknown[];
+  #method: RealmConsoleEventMethod;
   #timestamp: number;
 
-  get args(): readonly unknown[] {
-    return this.#args;
+  get data(): readonly unknown[] {
+    return this.#data;
   }
 
-  get method(): string {
+  get method(): RealmConsoleEventMethod {
     return this.#method;
   }
 
@@ -149,4 +172,13 @@ class WebDriverErrorEvent extends WebDriverEvent {
   }
 }
 
-export { CustomEventTarget, RealmConsoleEvent, RealmErrorEvent, RealmEvent, WebDriverErrorEvent, WebDriverEvent };
+export {
+  CustomEventTarget,
+  RealmConsoleEvent,
+  realmConsoleEventMethodSchema,
+  RealmErrorEvent,
+  RealmEvent,
+  WebDriverErrorEvent,
+  WebDriverEvent
+};
+export type { RealmConsoleEventMethod };

@@ -5,12 +5,19 @@ import { BrowsingContext, type WebDriver, type WebElement } from 'selenium-webdr
 import getLogInspectorInstance from 'selenium-webdriver/bidi/logInspector.js';
 import type { RealmInfo } from 'selenium-webdriver/bidi/scriptManager.js';
 import getScriptManagerInstance from 'selenium-webdriver/bidi/scriptManager.js';
+import { fallback, parse } from 'valibot';
 import { workthru } from 'workthru';
 import { MARSHALLED_ELEMENT_SIGNATURE } from '../common/constant';
 import { isMarshalledElement } from '../common/marshalledElement';
 import { unmarshalToWebElement } from '../common/marshalledElement.host';
 import ElementTranslator from './ElementTranslator';
-import { CustomEventTarget, RealmConsoleEvent, RealmErrorEvent, RealmEvent } from './event';
+import {
+  CustomEventTarget,
+  RealmConsoleEvent,
+  realmConsoleEventMethodSchema,
+  RealmErrorEvent,
+  RealmEvent
+} from './event';
 import deserialize from './private/deserialize';
 import isWebElementLike from './private/isWebElementLike';
 
@@ -75,8 +82,8 @@ class RealmSession<T extends Stub> extends CustomEventTarget<RealmSessionEventMa
           this.dispatchEvent(
             new RealmConsoleEvent('console', {
               ...realmInfo,
-              args,
-              method: event.method,
+              data: args,
+              method: parse(fallback(realmConsoleEventMethodSchema, 'log'), event.method),
               timestamp: event.timeStamp
             })
           );

@@ -47,7 +47,7 @@ using session = new WebDriverSession(
   // Security risk: intentionally load code from user-supplied path.
   {
     ...(await import(`${opts.stub}`)).default,
-    ...(await import(`${opts.stub}/implementation`)).default
+    ...(await import(`${opts.stub}/implementation.js`)).default
   }
 );
 
@@ -63,8 +63,8 @@ session.addEventListener(
 
 session.addEventListener('closing', () => console.log('Shutting down'), { once: true });
 
-session.addEventListener('console', ({ args, realmId }) => {
-  console.log(`[${shortenRealmId(realmId)}]`, ...args);
+session.addEventListener('console', ({ data, method, realmId }) => {
+  console.log(`[${shortenRealmId(realmId)}]`, `[${method}]`, ...data);
 });
 
 session.addEventListener('error', ({ error }) => console.error(error), { once: true });
