@@ -1,8 +1,8 @@
+import { PNG } from '@onting/common/repack/pngjs/browser.js';
 import { encode } from 'base64-arraybuffer';
 import type { AsyncExpectationResult } from 'expect';
 import { onErrorResumeNext } from 'on-error-resume-next/async';
 import pixelmatch from 'pixelmatch';
-import { PNG } from '@onting/common/repack/pngjs/browser.js';
 import type { Stub } from '../type.ts';
 import parsePNG from './parsePNG.ts';
 

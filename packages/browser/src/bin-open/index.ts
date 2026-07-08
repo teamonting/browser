@@ -26,18 +26,23 @@ program.option('--wsl', 'run browser on Windows (if under WSL2)');
 program.parse(process.argv);
 
 let shouldUpdateSnapshot = false;
+let shouldQuitResolver = Promise.withResolvers<void>();
 
-console.log('\nHotkeys:\n  U/u - Toggle snapshot to be re-recorded\n');
+console.log('Hotkeys:\n  Q/q - Quit\n  U/u - Toggle snapshot to be re-recorded\n');
 
 process.stdin.setRawMode(true);
 
-process.stdin.on('data', buffer => {
+const handleStdinData = (buffer: string | NonSharedBuffer): void => {
   const stringBuffer = buffer.toString('utf-8');
 
   if (stringBuffer === '\x03') {
     console.log('^C');
 
     process.exit(-1);
+  } else if (stringBuffer === 'q' || stringBuffer === 'Q') {
+    console.log('Quit signaled');
+
+    shouldQuitResolver.resolve();
   } else if (stringBuffer === 'u' || stringBuffer === 'U') {
     shouldUpdateSnapshot = !shouldUpdateSnapshot;
 
@@ -47,7 +52,9 @@ process.stdin.on('data', buffer => {
       console.log('Snapshot will NOT be re-recorded.');
     }
   }
-});
+};
+
+process.stdin.on('data', handleStdinData);
 
 const opts =
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -132,4 +139,10 @@ session.addEventListener('realmerror', ({ realmId, error: reason }) => {
   console.error(`[${shortenRealmId(realmId)}] Exception caught while attaching to realm.`, reason);
 });
 
-await new Promise<void>(resolve => session.addEventListener('close', () => resolve()));
+await Promise.race([
+  new Promise<void>(resolve => session.addEventListener('close', () => resolve())),
+  shouldQuitResolver.promise
+]);
+
+session.close();
+process.stdin.destroy();
