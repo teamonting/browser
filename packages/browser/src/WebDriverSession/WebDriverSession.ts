@@ -2,7 +2,7 @@
 
 /// <reference types="node" />
 
-import type { Stub, StubImplementation } from '@onting/rpc';
+import type { StubImplementation } from '@onting/rpc';
 import { error as SeleniumWebDriverError, WebDriver } from 'selenium-webdriver';
 import getScriptManagerInstance, { type RealmInfo } from 'selenium-webdriver/bidi/scriptManager.js';
 import {
@@ -29,11 +29,14 @@ type WebDriverSessionEventMap = {
   realmload: RealmEvent;
 };
 
-class WebDriverSession<T extends Stub> extends CustomEventTarget<WebDriverSessionEventMap> {
-  constructor(webDriver: WebDriver, stubImplementation: StubImplementation<T>) {
+class WebDriverSession<
+  T extends StubImplementation<// eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any>
+> extends CustomEventTarget<WebDriverSessionEventMap> {
+  constructor(webDriver: WebDriver, implementation: T) {
     super();
 
-    this.#stubImplementation = stubImplementation;
+    this.#implementation = implementation;
     this.#webDriver = webDriver;
 
     void this.#asyncConstructor();
@@ -152,7 +155,7 @@ class WebDriverSession<T extends Stub> extends CustomEventTarget<WebDriverSessio
 
   #abortController: AbortController = new AbortController();
   #activeRealms: Map<string, RealmSession<T>> = new Map();
-  #stubImplementation: StubImplementation<T>;
+  #implementation: T;
   #webDriver: WebDriver;
 
   get #aborted(): boolean {
@@ -166,7 +169,7 @@ class WebDriverSession<T extends Stub> extends CustomEventTarget<WebDriverSessio
       throw new Error(`Realm "${realmId}" has already attached`);
     }
 
-    const realm = new RealmSession(this.#webDriver, realmInfo, this.#stubImplementation);
+    const realm = new RealmSession(this.#webDriver, realmInfo, this.#implementation);
 
     this.#activeRealms.set(realmId, realm);
 

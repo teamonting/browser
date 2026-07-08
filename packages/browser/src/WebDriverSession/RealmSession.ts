@@ -1,4 +1,4 @@
-import type { Stub, StubImplementation } from '@onting/rpc';
+import type { InferStub, StubContract, StubImplementation } from '@onting/rpc';
 import { listen } from '@onting/rpc/server.js';
 import { viaBiDi } from '@onting/selenium-webdriver-message-port/host.js';
 import { BrowsingContext, type WebDriver, type WebElement } from 'selenium-webdriver';
@@ -28,8 +28,11 @@ type RealmSessionEventMap = {
   load: RealmEvent;
 };
 
-class RealmSession<T extends Stub> extends CustomEventTarget<RealmSessionEventMap> {
-  constructor(webDriver: WebDriver, realmInfo: RealmInfo, stubImplementation: StubImplementation<T>) {
+class RealmSession<
+  T extends StubContract<// eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any>
+> extends CustomEventTarget<RealmSessionEventMap> {
+  constructor(webDriver: WebDriver, realmInfo: RealmInfo, implementation: StubImplementation<InferStub<T>>) {
     super();
 
     this.#abortController.signal.addEventListener(
@@ -40,7 +43,7 @@ class RealmSession<T extends Stub> extends CustomEventTarget<RealmSessionEventMa
 
     (async () => {
       try {
-        await this.#asyncConstructor(webDriver, realmInfo, stubImplementation);
+        await this.#asyncConstructor(webDriver, realmInfo, implementation);
       } catch (error) {
         this.dispatchEvent(new RealmErrorEvent('error', { ...realmInfo, error }));
 
@@ -49,7 +52,11 @@ class RealmSession<T extends Stub> extends CustomEventTarget<RealmSessionEventMa
     })();
   }
 
-  async #asyncConstructor(webDriver: WebDriver, realmInfo: RealmInfo, stubImplementation: StubImplementation<T>) {
+  async #asyncConstructor(
+    webDriver: WebDriver,
+    realmInfo: RealmInfo,
+    stubImplementation: StubImplementation<InferStub<T>>
+  ) {
     using disposer = new DisposableStack();
 
     // TODO: It seems `selenium-webdriver@4.44.0` is bugged.
@@ -93,7 +100,7 @@ class RealmSession<T extends Stub> extends CustomEventTarget<RealmSessionEventMa
     );
 
     disposer.adopt(
-      listen<StubImplementation<T>, T>(
+      await listen(
         stubImplementation,
         {
           browsingContext: await BrowsingContext(webDriver, { browsingContextId: realmInfo.browsingContext }),

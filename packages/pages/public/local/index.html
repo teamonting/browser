@@ -9,6 +9,11 @@
         }
       }
     </script>
+    <style type="text/css">
+      body {
+        background-color: #f7f7f7;
+      }
+    </style>
   </head>
   <body>
     <button data-testid="click-me" type="button">Click me</button>
@@ -16,7 +21,7 @@
       Type on me:&nbsp;
       <input type="text" data-testid="type-on-me" />
     </label>
-    <iframe src="/local/iframe.html" style="width: 560px"></iframe>
+    <!-- <iframe src="iframe.html"></iframe> -->
     <script type="module">
       document.querySelector('[data-testid="click-me"]').addEventListener('click', ({ currentTarget }) => {
         currentTarget.textContent = 'Clicked';
@@ -26,16 +31,16 @@
       });
     </script>
     <script type="module">
-      import { getStub } from '@onting/browser';
+      import { createExpectMatcher, getStub } from '@onting/browser';
+      import stubDeclaration from '@onting/stub';
+      import expect from 'https://esm.sh/expect?standalone';
 
-      const stub = getStub();
+      const stub = await getStub(stubDeclaration);
 
-      console.log('got stub', stub);
+      expect.extend(createExpectMatcher(stub));
 
       // Set viewport
       await stub.setViewport(640, 480);
-
-      console.log('set viewport');
 
       // Print timestamp
       const timestamp = await stub.getTimestamp();
@@ -49,13 +54,13 @@
       // Capture screenshot
       // console.log(await stub.captureScreenshot());
 
-      await stub.test(document.body);
-
       await stub.click(document.querySelector('[data-testid="click-me"]'));
       await stub.click(document.querySelector('[data-testid="type-on-me"]'));
 
       await stub.type('Hello, World!', { selectAllBeforeType: true });
       await stub.type('Aloha!', { selectAllBeforeType: true });
+
+      await expect(stub.captureScreenshot()).resolves.toMatchImageSnapshot();
     </script>
   </body>
 </html>

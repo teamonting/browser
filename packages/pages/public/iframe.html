@@ -4,7 +4,8 @@
     <script type="importmap">
       {
         "imports": {
-          "@onting/browser": "https://cdn.jsdelivr.net/npm/@onting/browser@main/static/index.js",
+          "x@onting/browser": "https://cdn.jsdelivr.net/npm/@onting/browser@main/static/index.js",
+          "@onting/browser": "http://localhost:5002/index.js",
           "@onting/stub": "https://cdn.jsdelivr.net/npm/@onting/stub@main/dist/index.js"
         }
       }
@@ -25,9 +26,13 @@
       });
     </script>
     <script type="module">
-      import { getStub } from '@onting/browser';
+      import { createExpectMatcher, getStub } from '@onting/browser';
+      import expect from 'https://esm.sh/expect?standalone';
+      import stubDeclaration from '@onting/stub';
 
-      const stub = getStub();
+      const stub = await getStub(stubDeclaration);
+
+      expect.extend(createExpectMatcher(stub));
 
       // Print timestamp
       const timestamp = await stub.getTimestamp();
@@ -38,11 +43,11 @@
 
       document.body.appendChild(headingElement);
 
-      await stub.test(document.body);
-
       await stub.click(document.querySelector('[data-testid="click-me"]'));
 
       // await stub.type('Hello, World!', { clickBeforeType: document.querySelector('[data-testid="type-on-me"]') });
+
+      // await expect(stub.captureScreenshot()).resolves.toMatchImageSnapshot();
     </script>
   </body>
 </html>

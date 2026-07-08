@@ -1,29 +1,24 @@
-import type { Stub, StubDeclaration } from '@onting/rpc';
+import type { InferClient, StubContract } from '@onting/rpc';
 import { createClientStub } from '@onting/rpc/client.js';
 import { messagePort } from '@onting/selenium-webdriver-message-port/browser.js';
-import defaultStubDeclaration from '@onting/stub';
 import { workthru } from 'workthru/async';
 import { marshalDOMElement, unmarshalToDOMElement } from '../common/marshalledElement.browser.ts';
 import { isMarshalledElement } from '../common/marshalledElement.ts';
 
-function getStub(stubDeclaration?: StubDeclaration<Stub> | undefined) {
-  return createClientStub(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (stubDeclaration ?? defaultStubDeclaration) as any,
-    messagePort,
-    {
-      async marshal(value: unknown) {
-        return await workthru(value, async value =>
-          value instanceof Element ? await marshalDOMElement(value) : value
-        );
-      },
-      async unmarshal(value: unknown) {
-        return await workthru(value, async value =>
-          isMarshalledElement(value) ? await unmarshalToDOMElement(value) : value
-        );
-      }
+async function getStub<
+  T extends StubContract<// eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any>
+>(contract?: T | undefined): Promise<InferClient<T>> {
+  return createClientStub<T>((contract ?? (await import('@onting/stub'))) as T, messagePort, {
+    async marshal(value: unknown) {
+      return await workthru(value, async value => (value instanceof Element ? await marshalDOMElement(value) : value));
+    },
+    async unmarshal(value: unknown) {
+      return await workthru(value, async value =>
+        isMarshalledElement(value) ? await unmarshalToDOMElement(value) : value
+      );
     }
-  );
+  });
 }
 
 export default getStub;
