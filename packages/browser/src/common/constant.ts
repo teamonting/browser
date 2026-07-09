@@ -1,4 +1,5 @@
 const MARSHALLED_ELEMENT_SIGNATURE = '__onting/browser/element__';
+const MARSHALLED_ERROR_SIGNATURE = '__onting/browser/error__';
 const TRANSLATOR_CHANNEL_NAME_PREFIX = '@onting/browser/element-translator/channel/';
 const TRANSLATOR_HOST_RETURN_SYMBOL = Symbol.for('@onting/browser/element-translator/hostReturn');
 const TRANSLATOR_NOTIFY_HOST_SYMBOL = Symbol.for('@onting/browser/element-translator/notifyHost');
@@ -21,6 +22,7 @@ type GlobalThisWithTranslator = typeof globalThis & {
 
 export {
   MARSHALLED_ELEMENT_SIGNATURE,
+  MARSHALLED_ERROR_SIGNATURE,
   TRANSLATOR_CHANNEL_NAME_PREFIX,
   TRANSLATOR_HOST_RETURN_SYMBOL,
   TRANSLATOR_NOTIFY_HOST_SYMBOL,

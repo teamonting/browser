@@ -5,7 +5,7 @@
       {
         "imports": {
           "@onting/browser": "http://localhost:5002/index.js",
-          "@onting/stub": "http://localhost:5001/index.js"
+          "@onting/stub": "https://cdn.jsdelivr.net/npm/@onting/stub@main/dist/index.js"
         }
       }
     </script>
@@ -21,7 +21,7 @@
       Type on me:&nbsp;
       <input type="text" data-testid="type-on-me" />
     </label>
-    <!-- <iframe src="iframe.html"></iframe> -->
+    <iframe src="iframe.html"></iframe>
     <script type="module">
       document.querySelector('[data-testid="click-me"]').addEventListener('click', ({ currentTarget }) => {
         currentTarget.textContent = 'Clicked';
@@ -37,6 +37,7 @@
 
       const stub = await getStub(stubDeclaration);
 
+      // TODO: Should move `createExpectMatcher` to `@onting/stub`.
       expect.extend(createExpectMatcher(stub));
 
       // Set viewport
@@ -61,6 +62,8 @@
       await stub.type('Aloha!', { selectAllBeforeType: true });
 
       await expect(stub.captureScreenshot()).resolves.toMatchImageSnapshot();
+
+      console.log('🆗');
     </script>
   </body>
 </html>

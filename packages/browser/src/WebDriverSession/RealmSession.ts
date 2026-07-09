@@ -10,6 +10,7 @@ import { workthru } from 'workthru';
 import { MARSHALLED_ELEMENT_SIGNATURE } from '../common/constant';
 import { isMarshalledElement } from '../common/marshalledElement';
 import { unmarshalToWebElement } from '../common/marshalledElement.host';
+import { isMarshalledError, marshalError, unmarshalError } from '../common/marshalledError';
 import ElementTranslator from './ElementTranslator';
 import {
   CustomEventTarget,
@@ -112,12 +113,18 @@ class RealmSession<
             return await workthru(value, async value =>
               isWebElementLike(value)
                 ? [MARSHALLED_ELEMENT_SIGNATURE, { sharedId: await (value as unknown as WebElement).getId() }]
-                : value
+                : value instanceof Error
+                  ? marshalError(value)
+                  : value
             );
           },
           async unmarshal(value: unknown) {
             return await workthru(value, async value =>
-              isMarshalledElement(value) ? await unmarshalToWebElement(value, webDriver) : value
+              isMarshalledElement(value)
+                ? await unmarshalToWebElement(value, webDriver)
+                : isMarshalledError(value)
+                  ? unmarshalError(value)
+                  : value
             );
           }
         }
