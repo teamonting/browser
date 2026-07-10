@@ -99,6 +99,6 @@
     "workthru": "^0.1.1-main.202606201134.ea6dd9f"
   },
   "peerDependencies": {
-    "@onting/stub": "^0.1.0-main.202607060431.1eb78c0"
+    "@onting/stub": "^0.1.0-main"
   }
 }
