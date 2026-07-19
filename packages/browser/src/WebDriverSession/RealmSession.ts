@@ -7,20 +7,20 @@ import type { RealmInfo } from 'selenium-webdriver/bidi/scriptManager.js';
 import getScriptManagerInstance from 'selenium-webdriver/bidi/scriptManager.js';
 import { fallback, parse } from 'valibot';
 import { workthru } from 'workthru';
-import { MARSHALLED_ELEMENT_SIGNATURE } from '../common/constant';
-import { isMarshalledElement } from '../common/marshalledElement';
-import { unmarshalToWebElement } from '../common/marshalledElement.host';
-import { isMarshalledError, marshalError, unmarshalError } from '../common/marshalledError';
-import ElementTranslator from './ElementTranslator';
+import { MARSHALLED_ELEMENT_SIGNATURE } from '../common/constant.ts';
+import { isMarshalledElement } from '../common/marshalledElement.ts';
+import { unmarshalToWebElement } from '../common/marshalledElement.host.ts';
+import { isMarshalledError, marshalError, unmarshalError } from '../common/marshalledError.ts';
+import ElementTranslator from './ElementTranslator.ts';
 import {
   CustomEventTarget,
   RealmConsoleEvent,
   realmConsoleEventMethodSchema,
   RealmErrorEvent,
   RealmEvent
-} from './event';
-import deserialize from './private/deserialize';
-import isWebElementLike from './private/isWebElementLike';
+} from './event.ts';
+import deserialize from './private/deserialize.ts';
+import isWebElementLike from './private/isWebElementLike.ts';
 
 type RealmSessionEventMap = {
   close: RealmEvent;

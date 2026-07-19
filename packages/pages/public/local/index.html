@@ -4,9 +4,13 @@
     <script type="importmap">
       {
         "imports": {
-          "@onting/browser": "http://localhost:5002/index.js",
-          "@onting/stub": "http://localhost:5001/index.js",
-          "@onting/stub/": "http://localhost:5001/"
+          "@onting/browser@main": "https://cdn.jsdelivr.net/npm/@onting/browser@main/static/index.js",
+          "@onting/browser@local": "http://localhost:5002/index.js",
+          "@onting/stub@local": "http://localhost:5001/index.js",
+          "@onting/stub@local/": "http://localhost:5001/",
+          "@onting/stub@main": "https://cdn.jsdelivr.net/npm/@onting/stub@main/dist/index.js",
+          "@onting/stub@main/": "https://cdn.jsdelivr.net/npm/@onting/stub@main/dist/",
+          "expect": "https://esm.sh/expect?standalone"
         }
       }
     </script>
@@ -22,7 +26,7 @@
       Type on me:&nbsp;
       <input type="text" data-testid="type-on-me" />
     </label>
-    <iframe src="iframe.html"></iframe>
+    <!-- <iframe src="iframe.html"></iframe> -->
     <script type="module">
       document.querySelector('[data-testid="click-me"]').addEventListener('click', ({ currentTarget }) => {
         currentTarget.textContent = 'Clicked';
@@ -32,10 +36,10 @@
       });
     </script>
     <script type="module">
-      import { getStub } from '@onting/browser';
-      import stubDeclaration from '@onting/stub';
-      import { createExpectMatcher } from '@onting/stub/expectMatcher.js';
-      import expect from 'https://esm.sh/expect?standalone';
+      import { getStub } from '@onting/browser@local';
+      import stubDeclaration from '@onting/stub@main';
+      import { createExpectMatcher } from '@onting/stub@main/expectMatcher.js';
+      import expect from 'expect';
 
       const stub = await getStub(stubDeclaration);
 
@@ -45,23 +49,23 @@
       // Set viewport
       await stub.setViewport(640, 480);
 
-      // Print timestamp
-      const timestamp = await stub.getTimestamp();
+      // Print version
+      const version = await stub.getVersion();
 
       const headingElement = document.createElement('h1');
 
-      headingElement.textContent = timestamp;
+      headingElement.textContent = version;
 
       document.body.appendChild(headingElement);
 
       // Capture screenshot
       // console.log(await stub.captureScreenshot());
 
-      await stub.click(document.querySelector('[data-testid="click-me"]'));
-      await stub.click(document.querySelector('[data-testid="type-on-me"]'));
+      await stub.EXPERIMENTAL_click(document.querySelector('[data-testid="click-me"]'));
+      await stub.EXPERIMENTAL_click(document.querySelector('[data-testid="type-on-me"]'));
 
-      await stub.type('Hello, World!', { selectAllBeforeType: true });
-      await stub.type('Aloha!', { selectAllBeforeType: true });
+      await stub.EXPERIMENTAL_type('Hello, World!', { selectAllBeforeType: true });
+      await stub.EXPERIMENTAL_type('Aloha!', { selectAllBeforeType: true });
 
       await expect(stub.captureScreenshot()).resolves.toMatchImageSnapshot();
 

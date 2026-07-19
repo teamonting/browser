@@ -2,7 +2,7 @@
 
 /// <reference types="node" />
 
-import { defineImplementation, type StubImplementation } from '@onting/rpc';
+import { defineImplementation, type AnyStub, type StubContract, type StubImplementation } from '@onting/rpc';
 import { program } from 'commander';
 import { WebDriverSession } from '../WebDriverSession/index.ts';
 import { buildDriverService, buildWebDriver } from '../builder/index.ts';
@@ -26,7 +26,7 @@ program.option('--wsl', 'run browser on Windows (if under WSL2)');
 program.parse(process.argv);
 
 let shouldUpdateSnapshot = false;
-let shouldQuitResolver = Promise.withResolvers<void>();
+const shouldQuitResolver = Promise.withResolvers<void>();
 
 console.log('Hotkeys:\n  Q/q - Quit\n  U/u - Toggle snapshot to be re-recorded\n');
 
@@ -68,7 +68,7 @@ const opts =
     wsl: boolean | undefined;
   };
 
-let useWindowsBinary = !!opts.wsl;
+const useWindowsBinary = !!opts.wsl;
 
 // TODO: If `--chrome` is not set, we will default to "chrome" but we should warn user that default behavior could change anytime.
 const browser = opts.edge ? 'edge' : opts.firefox ? 'firefox' : opts.safari ? 'safari' : 'chrome';
@@ -79,11 +79,11 @@ await using webDriver = await buildWebDriver(browser, await driverService.start(
 
 const snapshotStoreMap = new Map<string, InMemorySnapshotStore>();
 
-let implementation: StubImplementation<any>;
+let implementation: StubImplementation<AnyStub>;
 
 if (opts.stub) {
   // Security risk: intentionally load code from user-supplied path.
-  implementation = defineImplementation(
+  implementation = defineImplementation<StubContract<AnyStub>>(
     (await import(`${opts.stub}`)).default,
     (await import(`${opts.stub}/host.js`)).default
   );

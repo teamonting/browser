@@ -1,8 +1,13 @@
-function tryGetPropertyValue<T extends string>(value: { [P in T]: any }, key: T): any {
+function tryGetPropertyValue<T extends string, U>(
+  value: { [P in T]: U },
+  key: T,
+  fallbackValue?: U | undefined
+): U | undefined {
   try {
     return value[key];
   } catch {
     // Get property could throw, ignore them.
+    return fallbackValue;
   }
 }
 
