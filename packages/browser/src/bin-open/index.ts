@@ -4,6 +4,7 @@
 
 import { defineImplementation, type AnyStub, type StubContract, type StubImplementation } from '@onting/rpc';
 import { program } from 'commander';
+import getScriptManagerInstance from 'selenium-webdriver/bidi/scriptManager.js';
 import { WebDriverSession } from '../WebDriverSession/index.ts';
 import { buildDriverService, buildWebDriver } from '../builder/index.ts';
 import InMemorySnapshotStore from './private/InMemorySnapshotStore.ts';
@@ -116,9 +117,62 @@ session.addEventListener(
 
 session.addEventListener('closing', () => console.log('Shutting down'), { once: true });
 
-session.addEventListener('console', ({ data, method, realmId }) => {
+async function injectBadge(browsingContextId: string, textContent: string): Promise<void> {
+  if (!browsingContextId) {
+    throw new Error('Failed to inject badge because unknown browsing context');
+  }
+
+  const scriptManager = await getScriptManagerInstance(browsingContextId, webDriver);
+
+  try {
+    await scriptManager.evaluateFunctionInBrowsingContext(
+      browsingContextId,
+      `(${(textContent: string) => {
+        const badgeElement = document.createElement('div');
+
+        badgeElement.popover = 'auto';
+        badgeElement.style.alignItems = 'center';
+        badgeElement.style.aspectRatio = '1/1';
+        badgeElement.style.background = 'transparent';
+        badgeElement.style.border = 'none';
+        badgeElement.style.display = 'flex';
+        badgeElement.style.fontSize = '128px';
+        badgeElement.style.justifyContent = 'center';
+        // Not sure why we have to add bottom margin to make emoji looks centered.
+        badgeElement.style.margin = 'auto 0 4px auto';
+        badgeElement.style.overflow = 'hidden';
+        badgeElement.style.padding = '0';
+        badgeElement.style.userSelect = 'none';
+        badgeElement.style.width = '160px';
+        badgeElement.textContent = textContent;
+
+        badgeElement.addEventListener('click', () => badgeElement.remove(), { once: true });
+
+        document.body.append(badgeElement);
+
+        badgeElement.showPopover();
+      }})(${JSON.stringify(textContent)})`,
+      false
+    );
+  } catch {}
+}
+
+session.addEventListener('console', ({ browsingContext, data, method, realmId }) => {
   process.stdout.write(`[${shortenRealmId(realmId)}] [${method}] `);
   console.log(...data);
+
+  switch (data[0]) {
+    case '🆗':
+      injectBadge(browsingContext, '✅');
+      break;
+
+    case '🆖':
+      injectBadge(browsingContext, '❌');
+      break;
+
+    default:
+      break;
+  }
 });
 
 session.addEventListener('error', ({ error }) => console.error(error), { once: true });
