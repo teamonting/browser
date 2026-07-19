@@ -58,9 +58,6 @@
 
       document.body.appendChild(headingElement);
 
-      // Capture screenshot
-      // console.log(await stub.captureScreenshot());
-
       await stub.EXPERIMENTAL_click(document.querySelector('[data-testid="click-me"]'));
       await stub.EXPERIMENTAL_click(document.querySelector('[data-testid="type-on-me"]'));
 
