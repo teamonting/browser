@@ -25,6 +25,7 @@ declare module 'selenium-webdriver/bidi/logInspector.js' {
     method: string;
   }
 
+  // eslint-disable-next-line typescript-eslint/no-empty-object-type
   export interface JavascriptLogEntry extends GenericLogEntry {}
 
   export interface LogInspector {
