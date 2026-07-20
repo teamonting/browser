@@ -96,7 +96,7 @@
     "selenium-webdriver": "^4.45.0",
     "uuid": "^14.0.0",
     "valibot": "^1.4.1",
-    "workthru": "^0.1.1-main.202606201134.ea6dd9f"
+    "workthru": "^0.1.1"
   },
   "peerDependencies": {
     "@onting/stub": "^0.1.0-main"
