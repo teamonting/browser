@@ -7,10 +7,10 @@ class InMemorySnapshotStore {
     this.#getShouldUpdateSnapshot = init?.getShouldUpdateSnapshot ?? (() => false);
   }
 
-  #bucket: string[] = [];
+  #bucket: ArrayBuffer[] = [];
   #getShouldUpdateSnapshot: () => boolean;
 
-  async get(index: number, _type: 'image/png'): Promise<string | undefined> {
+  async get(index: number, _type: 'image/png'): Promise<ArrayBuffer | undefined> {
     if (this.#getShouldUpdateSnapshot()) {
       return;
     }
@@ -18,7 +18,7 @@ class InMemorySnapshotStore {
     return this.#bucket[index];
   }
 
-  async set(index: number, _type: 'image/png', data: string): Promise<void> {
+  async set(index: number, _type: 'image/png', data: ArrayBuffer): Promise<void> {
     this.#bucket[index] = data;
   }
 }

@@ -11,11 +11,11 @@ class InMemorySnapshotStoreView implements SnapshotStore {
   #index: number = INITIAL_INDEX;
   #store: InMemorySnapshotStore;
 
-  async getNext(type: 'image/png'): Promise<string | undefined> {
+  async getNext(type: 'image/png'): Promise<ArrayBuffer | undefined> {
     return this.#store.get(++this.#index, type);
   }
 
-  async setCurrent(type: 'image/png', data: string): Promise<void> {
+  async setCurrent(type: 'image/png', data: ArrayBuffer): Promise<void> {
     if (this.#index !== INITIAL_INDEX) {
       this.#store.set(this.#index, type, data);
     }
