@@ -36,7 +36,7 @@
       });
     </script>
     <script type="module">
-      import { getStub } from '@onting/browser@local';
+      import { getStub } from '@onting/browser@main';
       import stubDeclaration from '@onting/stub@main';
       import { createExpectMatcher } from '@onting/stub@main/expectMatcher.js';
       import expect from 'expect';
@@ -46,8 +46,10 @@
       // TODO: Should move `createExpectMatcher` to `@onting/stub`.
       expect.extend(createExpectMatcher(stub));
 
+      console.log(stub);
+
       // Set viewport
-      await stub.setViewport(640, 480);
+      await stub.browsingContextSetViewport(640, 480);
 
       // Print version
       const version = await stub.getVersion();
@@ -64,9 +66,7 @@
       await stub.EXPERIMENTAL_type('Hello, World!', { selectAllBeforeType: true });
       await stub.EXPERIMENTAL_type('Aloha!', { selectAllBeforeType: true });
 
-      await expect(stub.captureScreenshot()).resolves.toMatchImageSnapshot();
-
-      // throw new Error('artificial');
+      await expect(stub.browsingContextCaptureScreenshot()).resolves.toMatchImageSnapshot();
 
       console.log('🆗');
     </script>
