@@ -35,6 +35,7 @@
     "**/*.test.mjs",
     "**/*.test.mts",
     "**/*.test.ts",
-    "**/*.test.tsx"
+    "**/*.test.tsx",
+    "type/**/*.d.ts"
   ]
 }
