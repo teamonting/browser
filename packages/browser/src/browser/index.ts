@@ -1,5 +1,5 @@
-import registerElementTranslator from './registerElementTranslator.ts';
-import registerErrorEventHandler from './registerErrorEventHandler.ts';
+import registerElementTranslator from './private/registerElementTranslator.ts';
+import registerErrorEventHandler from './private/registerErrorEventHandler.ts';
 
 registerElementTranslator();
 registerErrorEventHandler();

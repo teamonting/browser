@@ -3,9 +3,10 @@ import { createClientStub } from '@onting/rpc/client.js';
 import { messagePort } from '@onting/selenium-webdriver-message-port/browser.js';
 import type { Stub } from '@onting/stub';
 import { workthru } from 'workthru/async';
-import { marshalDOMElement, unmarshalToDOMElement } from '../common/marshalledElement.browser.ts';
-import { isMarshalledElement } from '../common/marshalledElement.ts';
-import { isMarshalledError, marshalError, unmarshalError } from '../common/marshalledError.ts';
+import { isMarshalledElement } from '../internal/marshalledElement.ts';
+import { isMarshalledError, marshalError, unmarshalError } from '../internal/marshalledError.ts';
+import marshalDOMElement from './private/marshalDOMElement.ts';
+import unmarshalToDOMElement from './private/unmarshalToDOMElement.ts';
 
 async function getStub(contract?: undefined): Promise<InferClient<StubContract<Stub>>>;
 
