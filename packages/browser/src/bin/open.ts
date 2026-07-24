@@ -5,8 +5,8 @@
 import { defineImplementation, type AnyStub, type StubContract, type StubImplementation } from '@onting/rpc';
 import { program } from 'commander';
 import getScriptManagerInstance from 'selenium-webdriver/bidi/scriptManager.js';
-import { WebDriverSession } from '../WebDriverSession/index.ts';
-import { buildDriverService, buildWebDriver } from '../builder/index.ts';
+import { WebDriverSession } from '../import/WebDriverSession.ts';
+import { buildDriverService, buildWebDriver } from '../import/builder.ts';
 import InMemorySnapshotStore from './private/InMemorySnapshotStore.ts';
 import InMemorySnapshotStoreView from './private/InMemorySnapshotStoreView.ts';
 import mapGetOrInsertComputed from './private/mapGetOrInsertComputed.ts';

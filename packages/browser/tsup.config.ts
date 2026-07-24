@@ -3,7 +3,7 @@ import { defineConfig } from 'tsup';
 export default defineConfig([
   {
     entry: {
-      'bin-open': './src/bin-open/index.ts'
+      'bin-open': './src/bin/open.ts'
     },
     format: 'esm',
     target: ['node24']
@@ -11,8 +11,8 @@ export default defineConfig([
   {
     dts: true,
     entry: {
-      builder: './src/builder/index.ts',
-      WebDriverSession: './src/WebDriverSession/index.ts'
+      builder: './src/import/builder.ts',
+      WebDriverSession: './src/import/WebDriverSession.ts'
     },
     format: 'esm',
     sourcemap: true,

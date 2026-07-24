@@ -9,7 +9,7 @@ import {
   TRANSLATOR_NOTIFY_HOST_SYMBOL,
   TRANSLATOR_SEND_MESSAGE_TO_HOST_SYMBOL,
   type GlobalThisWithTranslator
-} from '../common/constant.ts';
+} from '../../common/constant.ts';
 import deserialize, { RemoteNode } from './private/deserialize.ts';
 
 const eventWithSourceSchema = object({

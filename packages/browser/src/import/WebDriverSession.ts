@@ -5,5 +5,5 @@ export {
   RealmEvent,
   WebDriverErrorEvent,
   WebDriverEvent
-} from './event.ts';
-export { default as WebDriverSession } from './WebDriverSession.ts';
+} from './WebDriverSession/event.ts';
+export { default as WebDriverSession } from './WebDriverSession/WebDriverSession.ts';

@@ -7,10 +7,10 @@ import type { RealmInfo } from 'selenium-webdriver/bidi/scriptManager.js';
 import getScriptManagerInstance from 'selenium-webdriver/bidi/scriptManager.js';
 import { fallback, parse } from 'valibot';
 import { workthru } from 'workthru';
-import { MARSHALLED_ELEMENT_SIGNATURE } from '../common/constant.ts';
-import { isMarshalledElement } from '../common/marshalledElement.ts';
-import { unmarshalToWebElement } from '../common/marshalledElement.host.ts';
-import { isMarshalledError, marshalError, unmarshalError } from '../common/marshalledError.ts';
+import { MARSHALLED_ELEMENT_SIGNATURE } from '../../common/constant.ts';
+import { unmarshalToWebElement } from '../../common/marshalledElement.host.ts';
+import { isMarshalledElement } from '../../common/marshalledElement.ts';
+import { isMarshalledError, marshalError, unmarshalError } from '../../common/marshalledError.ts';
 import ElementTranslator from './ElementTranslator.ts';
 import {
   CustomEventTarget,
