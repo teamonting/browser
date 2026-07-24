@@ -6,7 +6,7 @@ import {
   TRANSLATOR_TRANSLATE_SYMBOL,
   type GlobalThisWithTranslator,
   type TranslationResult
-} from '../common/constant.ts';
+} from '../../internal/constant.ts';
 
 type Entry = {
   readonly resolvers: PromiseWithResolvers<TranslationResult>;
