@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Should not require `process.stdin.setRawMode` when running in non-interactive environment, in PR [#XXX](https://github.com/teamonting/browser/pull/XXX), by [@compulim](https://github.com/compulim)
+- Should not require `process.stdin.setRawMode` when running in non-interactive environment, in PR [#4](https://github.com/teamonting/browser/pull/4), by [@compulim](https://github.com/compulim)
 
 ## [0.1.0] - 2026-07-24
 
