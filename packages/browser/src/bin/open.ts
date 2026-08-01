@@ -29,33 +29,35 @@ program.parse(process.argv);
 let shouldUpdateSnapshot = false;
 const shouldQuitResolver = Promise.withResolvers<void>();
 
-console.log('Hotkeys:\n  Q/q - Quit\n  U/u - Toggle snapshot to be re-recorded\n');
+if (typeof process.stdin?.setRawMode === 'function') {
+  console.log('Hotkeys:\n  Q/q - Quit\n  U/u - Toggle snapshot to be re-recorded\n');
 
-process.stdin.setRawMode(true);
+  process.stdin.setRawMode(true);
 
-const handleStdinData = (buffer: string | NonSharedBuffer): void => {
-  const stringBuffer = buffer.toString('utf-8');
+  const handleStdinData = (buffer: string | NonSharedBuffer): void => {
+    const stringBuffer = buffer.toString('utf-8');
 
-  if (stringBuffer === '\x03') {
-    console.log('^C');
+    if (stringBuffer === '\x03') {
+      console.log('^C');
 
-    process.exit(-1);
-  } else if (stringBuffer === 'q' || stringBuffer === 'Q') {
-    console.log('Quit signaled');
+      process.exit(-1);
+    } else if (stringBuffer === 'q' || stringBuffer === 'Q') {
+      console.log('Quit signaled');
 
-    shouldQuitResolver.resolve();
-  } else if (stringBuffer === 'u' || stringBuffer === 'U') {
-    shouldUpdateSnapshot = !shouldUpdateSnapshot;
+      shouldQuitResolver.resolve();
+    } else if (stringBuffer === 'u' || stringBuffer === 'U') {
+      shouldUpdateSnapshot = !shouldUpdateSnapshot;
 
-    if (shouldUpdateSnapshot) {
-      console.log('Snapshot will be re-recorded.');
-    } else {
-      console.log('Snapshot will NOT be re-recorded.');
+      if (shouldUpdateSnapshot) {
+        console.log('Snapshot will be re-recorded.');
+      } else {
+        console.log('Snapshot will NOT be re-recorded.');
+      }
     }
-  }
-};
+  };
 
-process.stdin.on('data', handleStdinData);
+  process.stdin.on('data', handleStdinData);
+}
 
 const opts =
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
